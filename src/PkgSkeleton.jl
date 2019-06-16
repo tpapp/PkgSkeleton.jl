@@ -120,18 +120,18 @@ function generate(dest_dir; template = :default, force = false,
                   pkg_name = pkg_name_from_path(dest_dir),
                   git_init = true, docs_manifest = true)
     # preliminary checks
-    @argcheck isfile(dest_dir) "destination $(dest_dir) is a file."
-    if !force && !isdir(dest_dir)
+    @argcheck !isfile(dest_dir) "destination $(dest_dir) is a file."
+    if !force && isdir(dest_dir)
         @warn "destination $(dest_dir) exists, skipping package generation.\nConsider `force = true`."
         return false
     end
 
     # copy and substitute
     @info "getting template values"
-    replacements = get_replacement_values(pkg_name)
+    replacements = get_replacement_values(; pkg_name = pkg_name)
     @info "copy and substitute"
-    results = copy_and_subtitute(dest_dir, resolve_template_dir(template), replacements;
-                                 force = force)
+    results = copy_and_substitute(resolve_template_dir(template), dest_dir, replacements;
+                                  force = force)
 
     # git initialization
     if git_init

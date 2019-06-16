@@ -74,3 +74,39 @@ end
     @test replace_multiple("{COLOR} {DISH}", ["{COLOR}" => "green", "{DISH}" => "curry"]) ==
         "green curry"
 end
+
+####
+#### test generation
+####
+
+function check_dest_dir(pkg_name, dest_dir;)
+    # NOTE: very rudimentary check and should be improved, checking all valid substitutions
+    readme = joinpath(dest_dir, "README.md")
+    @test isfile(readme)
+    @test occursin(pkg_name, read(readme, String))
+    mainsrc = joinpath(dest_dir, "src", pkg_name * ".jl")
+    @test isfile(mainsrc)
+end
+
+@testset "package generation and checks" begin
+    mktempdir() do tempdir
+        dest_dir = joinpath(tempdir, "Foo")
+
+        # test generated structure
+        @test PkgSkeleton.generate(dest_dir) == true
+        check_dest_dir("Foo", dest_dir)
+
+        # run various sanity checks (mostly test contents of the template, CI will error)
+        cd(dest_dir) do
+            @info "test documentation (instantiation)"
+            run(`julia --project=docs -e 'using Pkg; Pkg.instantiate(); Pkg.develop(PackageSpec(path=pwd()))'`)
+            @info "test documentation (generation)"
+            run(`julia --project=docs --color=yes docs/make.jl`)
+            @info "test coverage (only instantiation)"
+            run(`julia --project=test/coverage -e 'using Pkg; Pkg.instantiate()'`)
+        end
+
+        @test PkgSkeleton.generate(dest_dir) == false # will not overwrite
+        @test PkgSkeleton.generate(dest_dir; force = true) # will overwrite
+    end
+end
