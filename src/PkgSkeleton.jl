@@ -1,3 +1,6 @@
+"""
+Julia package for creating new packages quickly. See [`PkgSkeleton.generate`](@ref).
+"""
 module PkgSkeleton
 
 using ArgCheck: @argcheck
@@ -84,6 +87,12 @@ function copy_and_substitute(src_dir, dest_dir, replacements;
     results
 end
 
+"""
+$(SIGNATURES)
+
+Return the template directory for `name`. Symbols refer to built-in templates, while strings
+are considered paths. Directories are always verified to exist.
+"""
 function resolve_template_dir(name::Symbol)
     dir = abspath(joinpath(@__DIR__, "..", "templates", String(name)))
     @argcheck isdir(dir) "Could not find built-in template $(name)."
@@ -117,11 +126,41 @@ end
 #### exposed API
 ####
 
+"""
+$(SIGNATURES)
+
+Generate the skeleton for a Julia package in `dest_dir`.
+
+# Arguments
+
+`template` specifies the template to use. Symbols (eg `:default`, which is the default)
+refer to *built-in* templates delivered with this package. Strings are considered paths.
+
+`skip_existing_dir = true` (the default) aborts package generation for existing directories.
+
+`skip_existing_files = true` (the default) prevents existing files from being overwritten.
+
+`pkg_name` can be used to specify a package name. Note that it is derived from `dest_dir`:
+the package name is `"Foo"` for all of
+
+1. `"/tmp/Foo"`,
+2. `"/tmp/Foo/"`,
+3. `"/tmp/Foo.jl"`,
+4. `"/tmp/Foo.jl/"`,
+
+Use a different name only when you know what you are doing.
+
+`git_init = true` (the default) ensures that an *empty* repository is generated in
+`dest_dir`. You still have to commit files yourself.
+
+`docs_manifest` completes the `Manifest.toml` in the `docs` subdirectory. You usually want
+this.
+"""
 function generate(dest_dir; template = :default,
-                  skip_existing_dir = true,
-                  skip_existing_files = true,
+                  skip_existing_dir::Bool = true,
+                  skip_existing_files::Bool = true,
                   pkg_name = pkg_name_from_path(dest_dir),
-                  git_init = true, docs_manifest = true)
+                  git_init::Bool = true, docs_manifest::Bool = true)
     # preliminary checks
     @argcheck !isfile(dest_dir) "destination $(dest_dir) is a file."
     if skip_existing_dir && isdir(dest_dir)
