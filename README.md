@@ -54,7 +54,7 @@ Best practices and recommended setups change with time. The recommended workflow
     ```julia
     PkgSkeleton.generate("/path/to/pkg"; skip_existing_dir = false, skip_existing_files = true)
     ```
-Only the second one will update existing files.
+    Only the second one will update existing files.
 
 4. Use your favorite git interface for reviewing the change. Pick and commit what you like, reset the rest.
 
