@@ -68,6 +68,7 @@ end
     @test pkg_name_from_path("/tmp/FooBar.jl") == "FooBar"
     @test pkg_name_from_path("/tmp/FooBar/") == "FooBar"
     @test pkg_name_from_path("/tmp/FooBar.jl/") == "FooBar"
+    @test_throws ArgumentError pkg_name_from_path("/tmp/FooBar.bin/")
 end
 
 @testset "multiple replaces" begin

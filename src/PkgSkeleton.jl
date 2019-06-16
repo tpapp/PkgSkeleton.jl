@@ -119,7 +119,9 @@ pkg_name_from_path("/tmp/Foo.jl/")
 ```
 """
 function pkg_name_from_path(path::AbstractString)
-    first(splitext(basename(isdirpath(path) ? dirname(path) : path)))
+    base, ext = splitext(basename(isdirpath(path) ? dirname(path) : path))
+    @argcheck isempty(ext) || ext == ".jl" "Invalid extension $(ext), specify package name manually."
+    base
 end
 
 ####
