@@ -1,7 +1,8 @@
 using PkgSkeleton, Test, Dates, UUIDs
 
-# test internals
-using PkgSkeleton: get_replacement_values, resolve_template_dir, pkg_name_from_path
+# import internals for testing
+using PkgSkeleton: get_replacement_values, resolve_template_dir, pkg_name_from_path,
+    replace_multiple
 
 ####
 #### Command line git should be installed for tests (so that they don't depend in LibGit2).
@@ -67,4 +68,9 @@ end
     @test pkg_name_from_path("/tmp/FooBar.jl") == "FooBar"
     @test pkg_name_from_path("/tmp/FooBar/") == "FooBar"
     @test pkg_name_from_path("/tmp/FooBar.jl/") == "FooBar"
+end
+
+@testset "multiple replaces" begin
+    @test replace_multiple("{COLOR} {DISH}", ["{COLOR}" => "green", "{DISH}" => "curry"]) ==
+        "green curry"
 end

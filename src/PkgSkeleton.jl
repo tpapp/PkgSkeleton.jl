@@ -41,7 +41,7 @@ $(SIGNATURES)
 
 Replace multiple pairs in `str`, using `replace` iteratively.
 """
-replace_multiple(str, replacements) = foldl(replace, str, replacements)
+replace_multiple(str, replacements) = foldl(replace, replacements; init = str)
 
 """
 $(SIGNATURES)
