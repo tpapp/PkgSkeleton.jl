@@ -84,7 +84,7 @@ function copy_and_substitute(src_dir, dest_dir, replacements; force::Bool = fals
 end
 
 function resolve_template_dir(name::Symbol)
-    dir = abspath(joinpath(@__DIR__, "..", "templates", name))
+    dir = abspath(joinpath(@__DIR__, "..", "templates", String(name)))
     @argcheck isdir(dir) "Could not find built-in template $(name)."
     dir
 end

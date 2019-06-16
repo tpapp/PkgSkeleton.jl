@@ -1,5 +1,8 @@
 using PkgSkeleton, Test, Dates, UUIDs
 
+# test internals
+using PkgSkeleton: get_replacement_values, resolve_template_dir
+
 ####
 #### Command line git should be installed for tests (so that they don't depend in LibGit2).
 ####
@@ -43,10 +46,18 @@ end
 ####
 
 @testset "replacement values" begin
-    d = Dict(PkgSkeleton.get_replacement_values(; pkg_name = "FOO"))
+    d = Dict(get_replacement_values(; pkg_name = "FOO"))
     @test d["{UUID}"] isa UUID
     @test d["{GHUSER}"] == GHUSER
     @test d["{USERNAME}"] == USERNAME
     @test d["{USEREMAIL}"] == USEREMAIL
     @test d["{YEAR}"] == year(now())
+end
+
+@testset "template directories" begin
+    default_template = abspath(joinpath(@__DIR__, "..", "templates", "default"))
+    @test resolve_template_dir(:default) == default_template
+    @test_throws ArgumentError resolve_template_dir(:nonexistent_builtin)
+    @test resolve_template_dir(default_template) == default_template
+    @test_throws ArgumentError resolve_template_dir(tempname()) # nonexistent
 end
