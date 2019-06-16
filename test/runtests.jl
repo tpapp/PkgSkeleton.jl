@@ -13,7 +13,7 @@ end
 #### For CI, set up environment, otherwise use local settings (and assume they are defined).
 ####
 
-const CI = get(ENV, "CI", false)
+const CI = parse(Bool, lowercase(get(ENV, "CI", "false")))
 
 function getgitopt(opt)
     try
