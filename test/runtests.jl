@@ -107,6 +107,6 @@ end
         end
 
         @test PkgSkeleton.generate(dest_dir) == false # will not overwrite
-        @test PkgSkeleton.generate(dest_dir; force = true) # will overwrite
+        @test PkgSkeleton.generate(dest_dir; skip_existing_dir = false) # will overwrite
     end
 end

@@ -54,14 +54,15 @@ Copy from `src_dir` to `dest_dir` recursively, making the substitutions of
 
 using `replacements`.
 
-Existing files are not overwritten unless `force = true`.
+Existing files are not overwritten when `skip_existing_files = true` (the default).
 
 Directory names are *not* replaced.
 
 Return a list of `source => dest` path pairs, with `source ≡ nothing` when `dest` was not
 overwritten.
 """
-function copy_and_substitute(src_dir, dest_dir, replacements; force::Bool = false)
+function copy_and_substitute(src_dir, dest_dir, replacements;
+                             skip_existing_files::Bool = true)
     results = Vector{Pair{Union{String,Nothing},String}}()
     for (root, dirs, files) in walkdir(src_dir)
         sub_dir = relpath(root, src_dir)
@@ -70,7 +71,7 @@ function copy_and_substitute(src_dir, dest_dir, replacements; force::Bool = fals
             srcfile = joinpath(root, file)
             destfile = normpath(joinpath(dest_dir, sub_dir,
                                          replace_multiple(file, replacements)))
-            if isfile(destfile) && !force
+            if isfile(destfile) && skip_existing_files
                 push!(results, nothing => destfile)
             else
                 push!(results, srcfile => destfile)
@@ -116,13 +117,15 @@ end
 #### exposed API
 ####
 
-function generate(dest_dir; template = :default, force = false,
+function generate(dest_dir; template = :default,
+                  skip_existing_dir = true,
+                  skip_existing_files = true,
                   pkg_name = pkg_name_from_path(dest_dir),
                   git_init = true, docs_manifest = true)
     # preliminary checks
     @argcheck !isfile(dest_dir) "destination $(dest_dir) is a file."
-    if !force && isdir(dest_dir)
-        @warn "destination $(dest_dir) exists, skipping package generation.\nConsider `force = true`."
+    if skip_existing_dir && isdir(dest_dir)
+        @warn "destination $(dest_dir) exists, skipping package generation.\nConsider `skip_existing_dir = false`."
         return false
     end
 
@@ -131,7 +134,10 @@ function generate(dest_dir; template = :default, force = false,
     replacements = get_replacement_values(; pkg_name = pkg_name)
     @info "copy and substitute"
     results = copy_and_substitute(resolve_template_dir(template), dest_dir, replacements;
-                                  force = force)
+                                  skip_existing_files = skip_existing_files)
+    for (src, dest) in results
+        src ≡ nothing && println(stderr, "not overwriting $(dest)")
+    end
 
     # git initialization
     if git_init
