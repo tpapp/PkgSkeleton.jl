@@ -38,6 +38,26 @@ After this, you probably want to `pkg> dev destination/directory` in Julia, and 
 
 See `?PkgSkeleton.generate` for details.
 
+### “Updating” existing packages
+
+Best practices and recommended setups change with time. The recommended workflow for updating *existing* packages using templates from this package is the following.
+
+1. Make sure that this package is of the latest version, eg with `pkg> up`.
+
+2. Make sure that *everything* is committed in version control. This is very important: when files are overwritten, work may be lost.
+
+3. Run either
+    ```julia
+    PkgSkeleton.generate("/path/to/pkg"; skip_existing_dir = false)
+    ```
+    or
+    ```julia
+    PkgSkeleton.generate("/path/to/pkg"; skip_existing_dir = false, skip_existing_files = true)
+    ```
+Only the second one will update existing files.
+
+4. Use your favorite git interface for reviewing the change. Pick and commit what you like, reset the rest.
+
 ## Prerequisites
 
 For the default template, you need to set the `git` configuration variables `user.name`, `user.email`, and `github.user`.
