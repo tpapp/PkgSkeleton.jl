@@ -97,11 +97,20 @@ end
 """
 $(SIGNATURES)
 
+Extract a package name using the last component of a path.
 
+The following all result in `"Foo"`:
+
+```julia
+pkg_name_from_path("/tmp/Foo")
+pkg_name_from_path("/tmp/Foo/")
+pkg_name_from_path("/tmp/Foo.jl")
+pkg_name_from_path("/tmp/Foo.jl/")
+```
 """
-pkg_name_from_path(dir::AbstractString) = basename(dirname(dest_dir))
-
-
+function pkg_name_from_path(path::AbstractString)
+    first(splitext(basename(isdirpath(path) ? dirname(path) : path)))
+end
 
 ####
 #### exposed API

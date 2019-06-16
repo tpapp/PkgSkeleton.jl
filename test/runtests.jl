@@ -1,7 +1,7 @@
 using PkgSkeleton, Test, Dates, UUIDs
 
 # test internals
-using PkgSkeleton: get_replacement_values, resolve_template_dir
+using PkgSkeleton: get_replacement_values, resolve_template_dir, pkg_name_from_path
 
 ####
 #### Command line git should be installed for tests (so that they don't depend in LibGit2).
@@ -60,4 +60,11 @@ end
     @test_throws ArgumentError resolve_template_dir(:nonexistent_builtin)
     @test resolve_template_dir(default_template) == default_template
     @test_throws ArgumentError resolve_template_dir(tempname()) # nonexistent
+end
+
+@testset "package name from path" begin
+    @test pkg_name_from_path("/tmp/FooBar") == "FooBar"
+    @test pkg_name_from_path("/tmp/FooBar.jl") == "FooBar"
+    @test pkg_name_from_path("/tmp/FooBar/") == "FooBar"
+    @test pkg_name_from_path("/tmp/FooBar.jl/") == "FooBar"
 end
