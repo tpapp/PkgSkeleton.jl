@@ -2,7 +2,7 @@ using Documenter, {PKGNAME}
 
 makedocs(
     modules = [{PKGNAME}],
-    format = :html,
+    format = Documenter.HTML(),
     checkdocs = :exports,
     sitename = "{PKGNAME}.jl",
     pages = Any["index.md"]
