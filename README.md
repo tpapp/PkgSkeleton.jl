@@ -13,10 +13,10 @@ Julia package for creating new packages quickly. This is the successor of [skele
 
 ## Installation
 
-The package is currently not registered. Add with
+The package is registered. Add with
 
 ```julia
-pkg> add https://github.com/tpapp/Pkgskeleton.jl
+pkg> add PkgSkeleton
 ```
 
 ## Usage
