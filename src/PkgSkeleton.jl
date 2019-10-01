@@ -133,6 +133,8 @@ $(SIGNATURES)
 
 Generate the skeleton for a Julia package in `dest_dir`.
 
+The directory is transformed with `expanduser`, replacing `~` in paths.
+
 # Arguments
 
 `template` specifies the template to use. Symbols (eg `:default`, which is the default)
@@ -163,6 +165,7 @@ function generate(dest_dir; template = :default,
                   skip_existing_files::Bool = true,
                   pkg_name = pkg_name_from_path(dest_dir),
                   git_init::Bool = true, docs_manifest::Bool = true)
+    dest_dir = expanduser(dest_dir)
     # preliminary checks
     @argcheck !isfile(dest_dir) "destination $(dest_dir) is a file."
     if skip_existing_dir && isdir(dest_dir)
