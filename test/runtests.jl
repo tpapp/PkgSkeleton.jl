@@ -43,6 +43,15 @@ else
 end
 
 ####
+#### Mock _confirm_default since no user should be assumed to be in front of the keyboard.
+####
+
+function PkgSkeleton._confirm_default(prompt, default)
+    println("$prompt ($default)>")
+    default
+end
+
+####
 #### test components
 ####
 

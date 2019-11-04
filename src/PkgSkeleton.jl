@@ -17,6 +17,12 @@ import UUIDs
 #### Template values
 ####
 
+function _confirm_default(prompt, default)
+    print("$prompt ($default)> ")
+    val = readline()
+    val == "" ? default : val
+end
+
 
 """
 $(SIGNATURES)
@@ -26,13 +32,26 @@ and state.
 """
 function get_replacement_values(; pkg_name)
     c = LibGit2.GitConfig()     # global configuration
-    _getgitopt(opt, type = AbstractString) = LibGit2.get(type, c, opt)
-    ["{UUID}" => UUIDs.uuid4(),
-     "{PKGNAME}" => pkg_name,
-     "{GHUSER}" => _getgitopt("github.user"),
-     "{USERNAME}" => _getgitopt("user.name"),
-     "{USEREMAIL}" => _getgitopt("user.email"),
-     "{YEAR}" => Dates.year(Dates.now())]
+    _getgitopt(opt, type = AbstractString) = try
+        LibGit2.get(type, c, opt)
+    catch
+        ""
+    end
+    println("Confirm default values by pressing RETURN, or enter a customized value")
+    replacements = [
+        "{UUID}" => UUIDs.uuid4(),
+        "{PKGNAME}" => pkg_name,
+        "{USERNAME}" => _confirm_default("Author name", _getgitopt("user.name")),
+        "{USEREMAIL}" => _confirm_default("Author email", _getgitopt("user.email")),
+        "{GHUSER}" => _confirm_default("Github user name", _getgitopt("github.user")),
+        "{YEAR}" => _confirm_default("Copyright year", Dates.year(Dates.now()))]
+
+    @info "parameters:" [Symbol(k)=>v for (k,v) in replacements]...
+    if _confirm_default("Confirm", "Y") in ("Y", "y")
+        replacements
+    else
+        nothing
+    end
 end
 
 ####
@@ -176,6 +195,10 @@ function generate(dest_dir; template = :default,
     # copy and substitute
     @info "getting template values"
     replacements = get_replacement_values(; pkg_name = pkg_name)
+    if replacements === nothing
+        @warn "aborting"
+        return false
+    end
     @info "copy and substitute"
     results = copy_and_substitute(resolve_template_dir(template), dest_dir, replacements;
                                   skip_existing_files = skip_existing_files)
