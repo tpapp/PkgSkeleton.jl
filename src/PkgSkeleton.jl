@@ -7,7 +7,7 @@ using ArgCheck: @argcheck
 import Dates
 using DocStringExtensions: SIGNATURES
 import LibGit2
-import Pkg
+import UUIDs
 
 ####
 ####
@@ -27,7 +27,7 @@ and state.
 function get_replacement_values(; pkg_name)
     c = LibGit2.GitConfig()     # global configuration
     _getgitopt(opt, type = AbstractString) = LibGit2.get(type, c, opt)
-    ["{UUID}" => Pkg.METADATA_compatible_uuid(pkg_name),
+    ["{UUID}" => UUIDs.uuid4(),
      "{PKGNAME}" => pkg_name,
      "{GHUSER}" => _getgitopt("github.user"),
      "{USERNAME}" => _getgitopt("user.name"),
