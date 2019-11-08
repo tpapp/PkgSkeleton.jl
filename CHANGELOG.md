@@ -1,5 +1,9 @@
 # Unreleased
 
+# 0.3.1
+
+- fix initial version in template
+
 # 0.3.0
 
 - get rid of Pkg.METADATA_compatible_uuid (#7, thanks @ffevotte)
