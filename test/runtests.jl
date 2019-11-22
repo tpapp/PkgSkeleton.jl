@@ -100,7 +100,7 @@ end
         # run various sanity checks (mostly test contents of the template, CI will error)
         cd(dest_dir) do
             @info "test documentation (instantiation)"
-            run(`julia --project=docs -e 'using Pkg; Pkg.instantiate(); Pkg.develop(PackageSpec(path=pwd()))'`)
+            run(`julia --project=docs -e 'using Pkg; Pkg.instantiate()'`)
             @info "test documentation (generation)"
             run(`julia --project=docs --color=yes docs/make.jl`)
             @info "test coverage (only instantiation)"

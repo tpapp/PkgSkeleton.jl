@@ -1,5 +1,7 @@
 # Unreleased
 
+- dev the parent package in the docs project upon generation
+
 # 0.3.1
 
 - fix initial version in template
