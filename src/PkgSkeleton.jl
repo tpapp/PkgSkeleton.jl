@@ -193,7 +193,9 @@ function generate(dest_dir; template = :default,
     if docs_manifest
         @info "adding documenter (completing the Manifest.toml for docs)"
         docs = joinpath(dest_dir, "docs")
-        run(`$(Base.julia_cmd()) --project=$(docs) -e 'import Pkg; Pkg.add("Documenter")'`)
+        cd(docs) do
+            run(`$(Base.julia_cmd()) --project=$(docs) -e 'import Pkg; Pkg.add("Documenter"); Pkg.develop(Pkg.PackageSpec(; path = ".."))'`)
+        end
     end
 
     # done
