@@ -23,7 +23,7 @@ function getgitopt(opt)
     try
         chomp(read(`git config --get $(opt)`, String))
     catch
-        err("couldn't get git option $(opt)")
+        error("couldn't get git option $(opt)")
     end
 end
 
