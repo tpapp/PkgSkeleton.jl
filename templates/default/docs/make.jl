@@ -13,4 +13,5 @@ makedocs(
 
 deploydocs(
     repo = "github.com/{GHUSER}/{PKGNAME}.jl.git",
+    push_preview = true
 )
