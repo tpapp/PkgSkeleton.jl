@@ -6,6 +6,8 @@
 
 - use 1.3 in testing
 
+- use correct travis matrix
+
 # 0.3.1
 
 - fix initial version in template
