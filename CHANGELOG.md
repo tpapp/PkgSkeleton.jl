@@ -1,6 +1,10 @@
 # Unreleased
 
+# 0.3.2
+
 - dev the parent package in the docs project upon generation
+
+- use 1.3 in testing
 
 # 0.3.1
 
