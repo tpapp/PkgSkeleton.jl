@@ -8,6 +8,7 @@ import Dates
 using DocStringExtensions: SIGNATURES
 import LibGit2
 import UUIDs
+import Pkg
 
 ####
 ####
@@ -194,7 +195,14 @@ function generate(dest_dir; template = :default,
         @info "adding documenter (completing the Manifest.toml for docs)"
         docs = joinpath(dest_dir, "docs")
         cd(docs) do
-            run(`$(Base.julia_cmd()) --project=$(docs) -e 'import Pkg; Pkg.add("Documenter"); Pkg.develop(Pkg.PackageSpec(; path = ".."))'`)
+            old = Base.ACTIVE_PROJECT[]
+            try
+                Pkg.activate(".")
+                Pkg.add("Documenter")
+                Pkg.develop(Pkg.PackageSpec(; path = ".."))
+            finally
+                Base.ACTIVE_PROJECT[] = old
+            end
         end
     end
 
