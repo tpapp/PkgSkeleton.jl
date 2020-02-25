@@ -1,7 +1,7 @@
 using PkgSkeleton, Test, Dates, UUIDs
 
 # import internals for testing
-using PkgSkeleton: get_replacement_values, resolve_template_dir, pkg_name_from_path,
+using PkgSkeleton: fill_replacement_values, resolve_template_dir, pkg_name_from_path,
     replace_multiple
 
 ####
@@ -9,7 +9,7 @@ using PkgSkeleton: get_replacement_values, resolve_template_dir, pkg_name_from_p
 ####
 
 if !success(`git --help`)
-    @info "Command line git should be installed."
+    @info "Command line git should be installed for tests."
     exit(1)
 end
 
@@ -47,12 +47,22 @@ end
 ####
 
 @testset "replacement values" begin
-    d = Dict(get_replacement_values(; pkg_name = "FOO"))
-    @test d["{UUID}"] isa UUID
-    @test d["{GHUSER}"] == GHUSER
-    @test d["{USERNAME}"] == USERNAME
-    @test d["{USEREMAIL}"] == USEREMAIL
-    @test d["{YEAR}"] == year(now())
+    @testset "using environment" begin
+        d = fill_replacement_values(NamedTuple(); dest_dir = "/tmp/FOO.jl")
+        @test d.PKGNAME == "FOO"
+        @test d.UUID isa UUID
+        @test d.GHUSER == GHUSER
+        @test d.USERNAME == USERNAME
+        @test d.USEREMAIL == USEREMAIL
+        @test d.YEAR == year(now())
+    end
+
+    @testset "using explicit replacements" begin
+        r = (PKGNAME = "bar", UUID = "1234", GHUSER = "someone", USERNAME = "Some O. N.",
+             USEREMAIL = "foo@bar.baz", YEAR = 1643)
+        r′ = fill_replacement_values(r; dest_dir = "irrelevant")
+        @test sort(collect(pairs(r)), by = first) == sort(collect(pairs(r′)), by = first)
+    end
 end
 
 @testset "template directories" begin
@@ -72,7 +82,7 @@ end
 end
 
 @testset "multiple replaces" begin
-    @test replace_multiple("{COLOR} {DISH}", ["{COLOR}" => "green", "{DISH}" => "curry"]) ==
+    @test replace_multiple("{COLOR} {DISH}", (COLOR = "green", DISH = "curry")) ==
         "green curry"
 end
 
