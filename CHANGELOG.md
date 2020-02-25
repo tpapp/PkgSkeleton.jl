@@ -1,5 +1,8 @@
 # Unreleased
 
+- allow more customizations ([#21](https://github.com/tpapp/PkgSkeleton.jl/pull/21))
+- add TagBot and CompatHelper actions to template ([#20](https://github.com/tpapp/PkgSkeleton.jl/pull/20))
+
 # 0.3.2
 
 - dev the parent package in the docs project upon generation
@@ -14,9 +17,9 @@
 
 # 0.3.0
 
-- get rid of Pkg.METADATA_compatible_uuid (#7, thanks @ffevotte)
+- get rid of `Pkg.METADATA_compatible_uuid` ([#7](https://github.com/tpapp/PkgSkeleton.jl/pull/7)), thanks @ffevotte)
 
-- use Documenter 0.23.4 in the template, minor cleanup (#8)
+- use Documenter 0.23.4 in the template, minor cleanup ([#8](https://github.com/tpapp/PkgSkeleton.jl/pull/8))
 
 # 0.2.0
 
