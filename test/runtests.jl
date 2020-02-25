@@ -1,7 +1,7 @@
 using PkgSkeleton, Test, Dates, UUIDs
 
 # import internals for testing
-using PkgSkeleton: fill_replacement_values, resolve_template_dir, pkg_name_from_path,
+using PkgSkeleton: fill_replacements, resolve_template_dir, pkg_name_from_path,
     replace_multiple
 
 ####
@@ -48,7 +48,7 @@ end
 
 @testset "replacement values" begin
     @testset "using environment" begin
-        d = fill_replacement_values(NamedTuple(); dest_dir = "/tmp/FOO.jl")
+        d = fill_replacements(NamedTuple(); dest_dir = "/tmp/FOO.jl")
         @test d.PKGNAME == "FOO"
         @test d.UUID isa UUID
         @test d.GHUSER == GHUSER
@@ -60,7 +60,7 @@ end
     @testset "using explicit replacements" begin
         r = (PKGNAME = "bar", UUID = "1234", GHUSER = "someone", USERNAME = "Some O. N.",
              USEREMAIL = "foo@bar.baz", YEAR = 1643)
-        r′ = fill_replacement_values(r; dest_dir = "irrelevant")
+        r′ = fill_replacements(r; dest_dir = "irrelevant")
         @test sort(collect(pairs(r)), by = first) == sort(collect(pairs(r′)), by = first)
     end
 end

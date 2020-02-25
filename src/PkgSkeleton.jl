@@ -39,7 +39,7 @@ function pkg_name_from_path(path::AbstractString)
 end
 
 "Docstring for replacement values."
-const REPLACEMENT_VALUES_DOCSTRING = """
+const REPLACEMENTS_DOCSTRING = """
 - `UUID`: the package UUID; default: random
 - `PKGNAME`: the package name; default: taken from the destination directory
 - `GHUSER`: the github user; default: taken from Git options
@@ -56,16 +56,16 @@ and state.
 
 The following replacement values are used:
 
-$(REPLACEMENT_VALUES_DOCSTRING)
+$(REPLACEMENTS_DOCSTRING)
 """
-function fill_replacement_values(replacement_values; dest_dir)
+function fill_replacements(replacements; dest_dir)
     c = LibGit2.GitConfig()     # global configuration
     _getgitopt(opt, type = AbstractString) = LibGit2.get(type, c, opt)
-    _provided_values = propertynames(replacement_values)
+    _provided_values = propertynames(replacements)
     function _ensure_value(key, f)
         if key ∈ _provided_values
             # VERSION ≥ 1.2 could use hasproperty, but we support earlier versions too
-            getproperty(replacement_values, key)
+            getproperty(replacements, key)
         else
             # we are lazy here so that the user can user an override when obtaining the
             # value from the environment would error
@@ -173,9 +173,9 @@ The directory is transformed with `expanduser`, replacing `~` in paths.
 `template` specifies the template to use. Symbols (eg `:default`, which is the default)
 refer to *built-in* templates delivered with this package. Strings are considered paths.
 
-`replacement_values`: a `NamedTuple` that can be used to manually specify the replacements:
+`replacements`: a `NamedTuple` that can be used to manually specify the replacements:
 
-$(REPLACEMENT_VALUES_DOCSTRING)
+$(REPLACEMENTS_DOCSTRING)
 
 Specifically, `PKGNAME` can be used to specify a package name, derived from `dest_dir` by
 default: the package name is `"Foo"` for all of
@@ -195,7 +195,7 @@ Use a different name only when you know what you are doing.
 this.
 """
 function generate(dest_dir; template = :default,
-                  replacement_values::NamedTuple = NamedTuple(),
+                  replacements::NamedTuple = NamedTuple(),
                   skip_existing_dir::Bool = true,
                   skip_existing_files::Bool = true,
                   git_init::Bool = true, docs_manifest::Bool = true)
@@ -209,7 +209,7 @@ function generate(dest_dir; template = :default,
 
     # copy and substitute
     @info "getting template values"
-    replacements = fill_replacement_values(replacement_values; dest_dir = dest_dir)
+    replacements = fill_replacements(replacements; dest_dir = dest_dir)
     @info "copy and substitute"
     results = copy_and_substitute(resolve_template_dir(template), dest_dir, replacements;
                                   skip_existing_files = skip_existing_files)
