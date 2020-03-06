@@ -60,7 +60,19 @@ $(REPLACEMENTS_DOCSTRING)
 """
 function fill_replacements(replacements; dest_dir)
     c = LibGit2.GitConfig()     # global configuration
-    _getgitopt(opt, type = AbstractString) = LibGit2.get(type, c, opt)
+    _getgitopt(opt, type = AbstractString) = begin
+        value=nothing
+        try
+            value = LibGit2.get(type, c, opt)
+        catch
+            println("your .gitconfig file lacks the parameter \"" ,opt,"\" set a new value now,")
+            print(opt," : ")
+            nw = readline()
+            LibGit2.set!(c,opt,nw)
+            value = LibGit2.get(type, c, opt)
+        end
+        return value
+    end
     _provided_values = propertynames(replacements)
     function _ensure_value(key, f)
         if key ∈ _provided_values
