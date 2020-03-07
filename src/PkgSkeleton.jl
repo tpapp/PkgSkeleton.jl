@@ -65,13 +65,8 @@ function fill_replacements(replacements; dest_dir)
         try
             value = LibGit2.get(type, c, opt)
         catch
-            println("your .gitconfig file lacks the parameter \"" ,opt,"\" set a new value now,")
-            print(opt," : ")
-            nw = readline()
-            LibGit2.set!(c,opt,nw)
-            value = LibGit2.get(type, c, opt)
+            return nothing
         end
-        return value
     end
     _provided_values = propertynames(replacements)
     function _ensure_value(key, f)
@@ -169,6 +164,18 @@ function resolve_template_dir(dir::AbstractString)
     dir
 end
 
+function suggest_generate(replacements)
+    suggestcall="generate(\"destdir\",replacements=(";
+    for (parameter,value) in zip(keys(replacements),values(replacements))
+        if isnothing(value)
+            suggestcall*="$parameter = \"your $parameter\","
+        end
+    end
+    suggestcall*="))"
+    return suggestcall
+end
+
+
 ####
 #### exposed API
 ####
@@ -222,6 +229,18 @@ function generate(dest_dir; template = :default,
     # copy and substitute
     @info "getting template values"
     replacements = fill_replacements(replacements; dest_dir = dest_dir)
+
+    if nothing ∈ values(replacements)
+        @error "Incomplete Git Config!"
+        @info """
+You have not supplied the correct paramenters,
+try calling generate by including the 'replacements' keyword argument:
+
+Call example:
+"""*suggest_generate(replacements)
+        return false
+    end
+
     @info "copy and substitute"
     results = copy_and_substitute(resolve_template_dir(template), dest_dir, replacements;
                                   skip_existing_files = skip_existing_files)
