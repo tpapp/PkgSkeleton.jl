@@ -1,5 +1,8 @@
 # Unreleased
 
+# 0.4.0
+
+- nicer error messages for unset options ([#24](https://github.com/tpapp/PkgSkeleton.jl/pull/24))
 - allow more customizations ([#21](https://github.com/tpapp/PkgSkeleton.jl/pull/21))
 - add TagBot and CompatHelper actions to template ([#20](https://github.com/tpapp/PkgSkeleton.jl/pull/20))
 

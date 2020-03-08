@@ -2,7 +2,7 @@ using PkgSkeleton, Test, Dates, UUIDs
 
 # import internals for testing
 using PkgSkeleton: fill_replacements, resolve_template_dir, pkg_name_from_path,
-    replace_multiple
+    replace_multiple, GitOptionNotFound
 
 ####
 #### Command line git should be installed for tests (so that they don't depend in LibGit2).
@@ -27,7 +27,9 @@ function getgitopt(opt)
     end
 end
 
-setgitopt(name, value) = run(`git config --global --add $(name) $(value)`)
+# set and unset only under CI
+setgitopt(name, value) = CI && run(`git config --global --add $(name) $(value)`)
+setgitopt(name, ::Nothing) = CI && run(`git config --global --unset-all $(name)`)
 
 if CI
     USERNAME = "Joe H. User"
@@ -46,7 +48,21 @@ end
 #### test components
 ####
 
+@testset "git option error" begin
+    @test sprint(showerror, GitOptionNotFound("user.name", "the project file")) ==
+"""
+Could not find option “user.name” in your global git configuration.
+
+It is necessary to set this for the project file.
+
+You can set this in the command line with
+
+git config --global user.name "…"
+"""
+end
+
 @testset "replacement values" begin
+    # also see tests at the end for the error
     @testset "using environment" begin
         d = fill_replacements(NamedTuple(); dest_dir = "/tmp/FOO.jl")
         @test d.PKGNAME == "FOO"
@@ -119,5 +135,13 @@ end
 
         @test PkgSkeleton.generate(dest_dir) == false # will not overwrite
         @test PkgSkeleton.generate(dest_dir; skip_existing_dir = false) # will overwrite
+    end
+end
+
+@testset "unset options" begin
+    # NOTE this should be the last test as it unsets options on CI
+    if CI                       # only for CI
+        setgitopt("user.name", nothing)
+        @test_throws GitOptionNotFound fill_replacements(NamedTuple(); dest_dir = "/tmp/FOO.jl")
     end
 end
