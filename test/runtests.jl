@@ -2,7 +2,7 @@ using PkgSkeleton, Test, Dates, UUIDs
 
 # import internals for testing
 using PkgSkeleton: fill_replacements, resolve_template_dir, pkg_name_from_path,
-    replace_multiple
+    replace_multiple, GitOptionNotFound
 
 ####
 #### Command line git should be installed for tests (so that they don't depend in LibGit2).
@@ -45,6 +45,19 @@ end
 ####
 #### test components
 ####
+
+@testset "git option error" begin
+    @test sprint(showerror, GitOptionNotFound("user.name", "the project file")) ==
+"""
+Could not find option “user.name” in your global git configuration.
+
+It is necessary to set this for the project file.
+
+You can set this in the command line with
+
+git config --global user.name "…"
+"""
+end
 
 @testset "replacement values" begin
     @testset "using environment" begin

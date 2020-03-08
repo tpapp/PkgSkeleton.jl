@@ -49,6 +49,28 @@ const REPLACEMENTS_DOCSTRING = """
 """
 
 """
+Error type for git options not found in the global environment. Used internally.
+"""
+struct GitOptionNotFound <: Exception
+    "The name for the option."
+    option::String
+    "What the option is used for (for the error message)."
+    used_for::String
+end
+
+function Base.showerror(io::IO, e::GitOptionNotFound)
+    print(io, """
+    Could not find option “$(e.option)” in your global git configuration.
+
+    It is necessary to set this for $(e.used_for).
+
+    You can set this in the command line with
+
+    git config --global $(e.option) "…"
+    """)
+end
+
+"""
 $(SIGNATURES)
 
 Populate a vector of replacement pairs, either from arguments or by querying global settings
@@ -60,7 +82,17 @@ $(REPLACEMENTS_DOCSTRING)
 """
 function fill_replacements(replacements; dest_dir)
     c = LibGit2.GitConfig()     # global configuration
-    _getgitopt(opt, type = AbstractString) = LibGit2.get(type, c, opt)
+    function _getgitopt(opt, used_for)
+        try
+            LibGit2.get(AbstractString, c, opt)
+        catch e
+            if e isa LibGit2.GitError # assume it is not found
+                throw(GitOptionNotFound(opt, used_for))
+            else
+                rethrow(e)
+            end
+        end
+    end
     _provided_values = propertynames(replacements)
     function _ensure_value(key, f)
         if key ∈ _provided_values
@@ -74,9 +106,11 @@ function fill_replacements(replacements; dest_dir)
     end
     defaults = (UUID = () -> UUIDs.uuid4(),
                 PKGNAME = () -> pkg_name_from_path(dest_dir),
-                GHUSER = () -> _getgitopt("github.user"),
-                USERNAME = () -> _getgitopt("user.name"),
-                USEREMAIL = () -> _getgitopt("user.email"),
+                GHUSER = () -> _getgitopt("github.user", "your Github username"),
+                USERNAME = () -> _getgitopt("user.name",
+                                            "your name (as the package author)"),
+                USEREMAIL = () -> _getgitopt("user.email",
+                                             "your e-mail (as the package author)"),
                 YEAR = () -> Dates.year(Dates.now()))
     NamedTuple{keys(defaults)}(map(_ensure_value, keys(defaults), values(defaults)))
 end
