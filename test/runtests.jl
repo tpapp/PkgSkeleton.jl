@@ -27,7 +27,9 @@ function getgitopt(opt)
     end
 end
 
-setgitopt(name, value) = run(`git config --global --add $(name) $(value)`)
+# set and unset only under CI
+setgitopt(name, value) = CI && run(`git config --global --add $(name) $(value)`)
+setgitopt(name, ::Nothing) = CI && run(`git config --global --unset-all $(name)`)
 
 if CI
     USERNAME = "Joe H. User"
@@ -60,6 +62,7 @@ git config --global user.name "…"
 end
 
 @testset "replacement values" begin
+    # also see tests at the end for the error
     @testset "using environment" begin
         d = fill_replacements(NamedTuple(); dest_dir = "/tmp/FOO.jl")
         @test d.PKGNAME == "FOO"
@@ -132,5 +135,13 @@ end
 
         @test PkgSkeleton.generate(dest_dir) == false # will not overwrite
         @test PkgSkeleton.generate(dest_dir; skip_existing_dir = false) # will overwrite
+    end
+end
+
+@testset "unset options" begin
+    # NOTE this should be the last test as it unsets options on CI
+    if CI                       # only for CI
+        setgitopt("user.name", nothing)
+        @test_throws GitOptionNotFound fill_replacements(NamedTuple(); dest_dir = "/tmp/FOO.jl")
     end
 end
