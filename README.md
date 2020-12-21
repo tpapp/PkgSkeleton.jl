@@ -1,6 +1,6 @@
 # PkgSkeleton.jl
 
-![lifecycle](https://img.shields.io/badge/lifecycle-maturing-blue.svg)<--
+![lifecycle](https://img.shields.io/badge/lifecycle-maturing-blue.svg) <!--
 ![lifecycle](https://img.shields.io/badge/lifecycle-stable-green.svg)
 ![lifecycle](https://img.shields.io/badge/lifecycle-retired-orange.svg)
 ![lifecycle](https://img.shields.io/badge/lifecycle-archived-red.svg)
