@@ -201,7 +201,7 @@ function generate(dest_dir; template = :default,
                 Pkg.add("Documenter")
                 Pkg.develop(Pkg.PackageSpec(; path = ".."))
             finally
-                Base.ACTIVE_PROJECT[] = old
+                Base.active_project(current_project)
             end
         end
     end
