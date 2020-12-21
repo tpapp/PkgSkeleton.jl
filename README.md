@@ -1,12 +1,11 @@
 # PkgSkeleton.jl
 
-![Lifecycle](https://img.shields.io/badge/lifecycle-experimental-orange.svg)<!--
-![Lifecycle](https://img.shields.io/badge/lifecycle-maturing-blue.svg)
-![Lifecycle](https://img.shields.io/badge/lifecycle-stable-green.svg)
-![Lifecycle](https://img.shields.io/badge/lifecycle-retired-orange.svg)
-![Lifecycle](https://img.shields.io/badge/lifecycle-archived-red.svg)
-![Lifecycle](https://img.shields.io/badge/lifecycle-dormant-blue.svg) -->
-![build](https://github.com/tpapp/PkgSkeleton.jl/workflows/CI/badge.svg)
+![lifecycle](https://img.shields.io/badge/lifecycle-maturing-blue.svg)<--
+![lifecycle](https://img.shields.io/badge/lifecycle-stable-green.svg)
+![lifecycle](https://img.shields.io/badge/lifecycle-retired-orange.svg)
+![lifecycle](https://img.shields.io/badge/lifecycle-archived-red.svg)
+![lifecycle](https://img.shields.io/badge/lifecycle-dormant-blue.svg) -->
+[![build](https://github.com/tpapp/PkgSkeleton.jl/workflows/CI/badge.svg)](https://github.com/tpapp/PkgSkeleton.jl/actions)
 [![codecov.io](http://codecov.io/github/tpapp/PkgSkeleton.jl/coverage.svg?branch=master)](http://codecov.io/github/tpapp/PkgSkeleton.jl?branch=master)
 
 Julia package for creating new packages quickly. This is the successor of [skeleton.jl](https://github.com/tpapp/skeleton.jl).
