@@ -195,7 +195,7 @@ function generate(dest_dir; template = :default,
         @info "adding documenter (completing the Manifest.toml for docs)"
         docs = joinpath(dest_dir, "docs")
         cd(docs) do
-            old = Base.ACTIVE_PROJECT[]
+            current_project = Base.active_project()
             try
                 Pkg.activate(".")
                 Pkg.add("Documenter")
