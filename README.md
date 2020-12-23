@@ -29,11 +29,11 @@ PkgSkeleton.generate("target_directory") # uses default template
 
 Then
 
-1. Various defaults [(described below)](@ref substitutions) are collected from your environment, eg your name, e-mail address, and Github account name (from `git` global settings). You can override these using a keyword argument.
+1. Various defaults [(described below)](#substitutions) are collected from your environment, eg your name, e-mail address, and Github account name (from `git` global settings). You can override these using a keyword argument.
 
 2. If `target_directory` does not exist, it is created with an empty git repository. Conversely, if the directory exits but is not a git repository, generation is aborted.
 
-3. Files in template are copied recursively, with various [substitutions (as described below)](@ref substitutions). Unless you are explicitly allowing overwrites, uncommitted files in the repository are not modified.
+3. Files in template are copied recursively, with various [substitutions (as described below)](#substitutions). Unless you are explicitly allowing overwrites, uncommitted files in the repository are not modified.
 
 After this, you probably want to `pkg> dev destination/directory` in Julia, and add your Github repository as a remote.
 
@@ -57,9 +57,9 @@ Best practices and recommended setups change with time. The recommended workflow
 
 ### Custom templates
 
-Just create directories with text (code, Markdown, TOML) files, [substitutions](@ref substitutions) between `{}`s will be replaced in *filenames* and their *contents*.
+Just create directories with text (code, Markdown, TOML) files, [substitutions](#substitutions) between `{}`s will be replaced in *filenames* and their *contents*.
 
-## [Substitutions](@id substitutions)
+## [Substitutions](#substitutions)
 
 For the default template, you need to set the `git` configuration variables `user.name`, `user.email`, and `github.user`.
 
