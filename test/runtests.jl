@@ -5,6 +5,12 @@ using PkgSkeleton: fill_replacements, resolve_template_directory, pkg_name_from_
     delimited_replacements, replace_multiple, read_template_directory, GitOptionNotFound
 
 ####
+#### some templates for testing
+####
+
+const TEST_TEMPLATES = joinpath(@__DIR__, "test_templates")
+
+####
 #### Command line git should be installed for tests (so that they don't depend in LibGit2).
 ####
 
@@ -104,7 +110,7 @@ end
 end
 
 @testset "read template" begin
-    @test read_template_directory(joinpath(@__DIR__, "test_template")) ==
+    @test read_template_directory(joinpath(TEST_TEMPLATES, "AB")) ==
         ["a.md" => "aa\n", "b/bb.md" => "bb\n"]
 end
 
