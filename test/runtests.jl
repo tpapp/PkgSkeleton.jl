@@ -2,7 +2,8 @@ using PkgSkeleton, Test, Dates, UUIDs
 
 # import internals for testing
 using PkgSkeleton: fill_replacements, resolve_template_directory, pkg_name_from_path,
-    delimited_replacements, replace_multiple, read_template_directory, GitOptionNotFound
+    delimited_replacements, replace_multiple, read_template_directory, GitOptionNotFound,
+    generate
 
 ####
 #### some templates for testing
@@ -132,7 +133,7 @@ end
         dest_dir = joinpath(tempdir, "Foo")
 
         # test generated structure
-        PkgSkeleton.generate(dest_dir)
+        generate(dest_dir)
         check_dest_dir("Foo", dest_dir)
 
         # run various sanity checks (mostly test contents of the template, CI will error)
@@ -146,6 +147,33 @@ end
             @info "test coverage (only instantiation)"
             run(`julia --startup-file=no --project=test/coverage -e 'using Pkg; Pkg.instantiate()'`)
             @test isfile(joinpath(dest_dir, "test", "coverage", "Manifest.toml"))
+        end
+    end
+end
+
+@testset "uncomitted file handling" begin
+    year = "2000"
+    template = joinpath(TEST_TEMPLATES, "git_overwrite_test")
+
+    @testset "no overwrite" begin
+        mktempdir() do tempdir
+            run(`$(joinpath(TEST_TEMPLATES, "create_git_test_repo.sh")) $(tempdir)`)
+            generate(tempdir; user_replacements = (YEAR = year, ), template = template)
+            for file in ["staged", "untracked", "in_repo_unstaged"]
+                @test chomp(read(joinpath(tempdir, file), String)) == file
+            end
+            @test chomp(read(joinpath(tempdir, "comitted"), String)) == year
+        end
+    end
+
+    @testset "forced overwrite" begin
+        mktempdir() do tempdir
+            run(`$(joinpath(TEST_TEMPLATES, "create_git_test_repo.sh")) $(tempdir)`)
+            generate(tempdir; user_replacements = (YEAR = year, ), template = template,
+                     overwrite_uncommitted = true)
+            for file in ["staged", "untracked", "in_repo_unstaged", "comitted"]
+                @test chomp(read(joinpath(tempdir, file), String)) == year
+            end
         end
     end
 end

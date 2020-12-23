@@ -33,7 +33,7 @@ Print `xs...` as a message of the given `:kind` (see the source for docs).
 """
 function msg(kind, xs...; header::Bool = false)
     color = getproperty((general = :white, # general/progress
-                         dirty = :magenta, # (writing to) uncommited files in repository
+                         dirty = :magenta, # (writing to) uncommitted files in repository
                          clean = :green,   # (writing to) committed files
                          same = :blue),    # files with same content
                         kind)
@@ -285,7 +285,7 @@ Generate the skeleton for a Julia package in `target_dir`. The directory is tran
 
 !!! NOTE
     If a package already exists at `target_dir`, it is strongly recommended that the
-    repository is in a clean state (no untracked files or uncommited changes).
+    repository is in a clean state (no untracked files or uncommitted changes).
 
 # Example
 
@@ -302,7 +302,7 @@ PkgSkeleton.generate("/tmp/Foo")
 - `user_replacements = (;)`: a `NamedTuple` that can be used to manually specify the
   replacements (see below).
 
-- `overwrite_uncommited = false`: Existing files which are not committed in the repository
+- `overwrite_uncommitted = false`: Existing files which are not committed in the repository
   are not overwritten unless this is `true`, generation is aborted with an error. **It is
   strongly advised that you just commit or delete exising files instead of using this
   flag.**
@@ -323,7 +323,7 @@ Use a different name only when you know what you are doing.
 """
 function generate(target_dir; template = :default,
                   user_replacements::NamedTuple = NamedTuple(),
-                  overwrite_uncommited::Bool = false)
+                  overwrite_uncommitted::Bool = false)
     target_dir = expanduser(target_dir)
     msg(:general, "getting template replacement values")
     replacements = fill_replacements(user_replacements; target_dir = target_dir)
@@ -351,12 +351,12 @@ function generate(target_dir; template = :default,
     @unpack same_files, dirty_files, clean_files =
         compare_with_target(target_dir, applied_template)
 
-    if overwrite_uncommited
+    if overwrite_uncommitted
         msg_and_write(:dirty,
                       "OVERWRITING the following uncommitted files as requested:",
                       target_dir, dirty_files)
     else
-        msg_and_write(:dirty, "uncommited changes in the following files, SKIPPING:",
+        msg_and_write(:dirty, "uncommitted changes in the following files, SKIPPING:",
                       nothing, dirty_files)
     end
 
