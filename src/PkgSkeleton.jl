@@ -302,9 +302,6 @@ PkgSkeleton.generate("/tmp/Foo")
 - `user_replacements = (;)`: a `NamedTuple` that can be used to manually specify the
   replacements (see below).
 
-- `docs_manifest = true` completes the `Manifest.toml` in the `docs` subdirectory. You
-   usually want this.
-
 - `overwrite_uncommited = false`: Existing files which are not committed in the repository
   are not overwritten unless this is `true`, generation is aborted with an error. **It is
   strongly advised that you just commit or delete exising files instead of using this
@@ -326,8 +323,7 @@ Use a different name only when you know what you are doing.
 """
 function generate(target_dir; template = :default,
                   user_replacements::NamedTuple = NamedTuple(),
-                  overwrite_uncommited::Bool = false,
-                  docs_manifest::Bool = true)
+                  overwrite_uncommited::Bool = false)
     target_dir = expanduser(target_dir)
     msg(:general, "getting template replacement values")
     replacements = fill_replacements(user_replacements; target_dir = target_dir)
@@ -370,21 +366,6 @@ function generate(target_dir; template = :default,
 
     msg_and_write(:same, "the following files as they would not change, SKIPPING:",
                   nothing, same_files)
-
-    if docs_manifest
-        msg(:general, "adding documenter (completing the Manifest.toml for docs)")
-        docs = joinpath(target_dir, "docs")
-        cd(docs) do
-            current_project = Base.active_project()
-            try
-                Pkg.activate(".")
-                Pkg.add("Documenter")
-                Pkg.develop(Pkg.PackageSpec(; path = ".."))
-            finally
-                Pkg.activate(current_project)
-            end
-        end
-    end
 
     # done
     msg(:general, "successfully generated $(replacements.PKGNAME)")
