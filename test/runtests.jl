@@ -132,11 +132,14 @@ end
         # run various sanity checks (mostly test contents of the template, CI will error)
         cd(dest_dir) do
             @info "test documentation (instantiation)"
-            run(`julia --startup-file=no --project=docs -e 'using Pkg; Pkg.instantiate()'`)
+            run(`julia --startup-file=no --project=docs -e 'using Pkg; Pkg.instantiate(); Pkg.develop(PackageSpec(path=pwd()))'`)
+            @test isfile(joinpath(dest_dir, "docs", "Manifest.toml"))
             @info "test documentation (generation)"
             run(`julia --startup-file=no --project=docs --color=yes docs/make.jl`)
+            @test isfile(joinpath(dest_dir, "docs", "build", "index.html"))
             @info "test coverage (only instantiation)"
             run(`julia --startup-file=no --project=test/coverage -e 'using Pkg; Pkg.instantiate()'`)
+            @test isfile(joinpath(dest_dir, "test", "coverage", "Manifest.toml"))
         end
     end
 end
