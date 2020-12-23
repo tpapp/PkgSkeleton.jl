@@ -1,4 +1,4 @@
-image: julia:1.1                # image comes from Docker hub
+image: julia:1.5                # image comes from Docker hub
 
 before_script:
   - julia --project=@. -e "import Pkg; Pkg.build()"

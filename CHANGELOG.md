@@ -1,5 +1,9 @@
 # Unreleased
 
+- revamp generation for easier updating of existing packages
+- don't instantiate manifest for docs
+- various version bumps
+
 # 0.4.0
 
 - nicer error messages for unset options ([#24](https://github.com/tpapp/PkgSkeleton.jl/pull/24))
