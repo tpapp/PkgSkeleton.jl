@@ -1,8 +1,8 @@
 using PkgSkeleton, Test, Dates, UUIDs
 
 # import internals for testing
-using PkgSkeleton: fill_replacements, resolve_template_dir, pkg_name_from_path,
-    replace_multiple, GitOptionNotFound
+using PkgSkeleton: fill_replacements, resolve_template_directory, pkg_name_from_path,
+    delimited_replacements, replace_multiple, read_template_directory, GitOptionNotFound
 
 ####
 #### Command line git should be installed for tests (so that they don't depend in LibGit2).
@@ -64,7 +64,7 @@ end
 @testset "replacement values" begin
     # also see tests at the end for the error
     @testset "using environment" begin
-        d = fill_replacements(NamedTuple(); dest_dir = "/tmp/FOO.jl")
+        d = fill_replacements(NamedTuple(); target_dir = "/tmp/FOO.jl")
         @test d.PKGNAME == "FOO"
         @test d.UUID isa UUID
         @test d.GHUSER == GHUSER
@@ -76,17 +76,17 @@ end
     @testset "using explicit replacements" begin
         r = (PKGNAME = "bar", UUID = "1234", GHUSER = "someone", USERNAME = "Some O. N.",
              USEREMAIL = "foo@bar.baz", YEAR = 1643)
-        r′ = fill_replacements(r; dest_dir = "irrelevant")
+        r′ = fill_replacements(r; target_dir = "irrelevant")
         @test sort(collect(pairs(r)), by = first) == sort(collect(pairs(r′)), by = first)
     end
 end
 
 @testset "template directories" begin
     default_template = abspath(joinpath(@__DIR__, "..", "templates", "default"))
-    @test resolve_template_dir(:default) == default_template
-    @test_throws ArgumentError resolve_template_dir(:nonexistent_builtin)
-    @test resolve_template_dir(default_template) == default_template
-    @test_throws ArgumentError resolve_template_dir(tempname()) # nonexistent
+    @test resolve_template_directory(:default) == default_template
+    @test_throws ArgumentError resolve_template_directory(:nonexistent_builtin)
+    @test resolve_template_directory(default_template) == default_template
+    @test_throws ArgumentError resolve_template_directory(tempname()) # nonexistent
 end
 
 @testset "package name from path" begin
@@ -98,8 +98,14 @@ end
 end
 
 @testset "multiple replaces" begin
-    @test replace_multiple("{COLOR} {DISH}", (COLOR = "green", DISH = "curry")) ==
-        "green curry"
+    @test replace_multiple("{COLOR} {DISH}",
+                           delimited_replacements((COLOR = "green",
+                                                   DISH = "curry"))) == "green curry"
+end
+
+@testset "read template" begin
+    @test read_template_directory(joinpath(@__DIR__, "test_template")) ==
+        ["a.md" => "aa\n", "b/bb.md" => "bb\n"]
 end
 
 ####
@@ -120,7 +126,7 @@ end
         dest_dir = joinpath(tempdir, "Foo")
 
         # test generated structure
-        @test PkgSkeleton.generate(dest_dir) == true
+        PkgSkeleton.generate(dest_dir)
         check_dest_dir("Foo", dest_dir)
 
         # run various sanity checks (mostly test contents of the template, CI will error)
@@ -132,9 +138,6 @@ end
             @info "test coverage (only instantiation)"
             run(`julia --startup-file=no --project=test/coverage -e 'using Pkg; Pkg.instantiate()'`)
         end
-
-        @test PkgSkeleton.generate(dest_dir) == false # will not overwrite
-        @test PkgSkeleton.generate(dest_dir; skip_existing_dir = false) # will overwrite
     end
 end
 
@@ -142,6 +145,7 @@ end
     # NOTE this should be the last test as it unsets options on CI
     if CI                       # only for CI
         setgitopt("user.name", nothing)
-        @test_throws GitOptionNotFound fill_replacements(NamedTuple(); dest_dir = "/tmp/FOO.jl")
+        @test_throws GitOptionNotFound fill_replacements(NamedTuple();
+                                                         target_dir = "/tmp/FOO.jl")
     end
 end

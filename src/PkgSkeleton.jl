@@ -1,5 +1,12 @@
 """
-Julia package for creating new packages quickly. See [`PkgSkeleton.generate`](@ref).
+Julia package for creating new packages and updating existing ones, following common
+practices and workflow recommendations.
+
+**This package may overwrite existing files.** While care has been taken to ensure no data
+loss, it may nevertheless happen. Keep backups, commit to a non-local git repository, and
+**use at your own risk**.
+
+[`PkgSkeleton.generate`](@ref) is the only exposed functionality.
 """
 module PkgSkeleton
 
@@ -9,13 +16,33 @@ using DocStringExtensions: SIGNATURES
 import LibGit2
 import UUIDs
 import Pkg
+using UnPack: @unpack
 
 ####
-####
+#### utilities
 ####
 
+"""
+$(SIGNATURES)
+
+Print `xs...` as a message of the given `:kind` (see the source for docs).
+
+!!! NOTE
+    The only function used to communicate with the user, everything (except errors) should
+    go through this so that it can be modified at a single point if necessary.
+"""
+function msg(kind, xs...; header::Bool = false)
+    color = getproperty((general = :white, # general/progress
+                         dirty = :magenta, # (writing to) uncommited files in repository
+                         clean = :green,   # (writing to) committed files
+                         same = :blue),    # files with same content
+                        kind)
+    printstyled(stderr, xs..., '\n'; color = color, bold = header)
+    nothing
+end
+
 ####
-#### Template values
+#### template values
 ####
 
 """
@@ -50,7 +77,8 @@ const REPLACEMENTS_DOCSTRING = """
 """
 
 """
-Error type for git options not found in the global environment. Used internally.
+Error type for git options not found in the global environment. Reporting with helpful error
+message to the user.
 """
 struct GitOptionNotFound <: Exception
     "The name for the option."
@@ -74,14 +102,17 @@ end
 """
 $(SIGNATURES)
 
-Populate a vector of replacement pairs, either from arguments or by querying global settings
-and state.
+Populate a NamedTuple replacements, either from arguments or by querying global settings and
+state. When a value is available in `user_replacements`, it is used directly.
 
 The following replacement values are used:
 
 $(REPLACEMENTS_DOCSTRING)
+
+`target_dir` is used as a path, and does not have to exist as a directory for this function
+to work.
 """
-function fill_replacements(replacements; dest_dir)
+function fill_replacements(user_replacements; target_dir)
     c = LibGit2.GitConfig()     # global configuration
     function _getgitopt(opt, used_for)
         try
@@ -94,11 +125,11 @@ function fill_replacements(replacements; dest_dir)
             end
         end
     end
-    _provided_values = propertynames(replacements)
+    _provided_values = propertynames(user_replacements)
     function _ensure_value(key, f)
         if key ∈ _provided_values
             # VERSION ≥ 1.2 could use hasproperty, but we support earlier versions too
-            getproperty(replacements, key)
+            getproperty(user_replacements, key)
         else
             # we are lazy here so that the user can user an override when obtaining the
             # value from the environment would error
@@ -106,7 +137,7 @@ function fill_replacements(replacements; dest_dir)
         end
     end
     defaults = (UUID = () -> UUIDs.uuid4(),
-                PKGNAME = () -> pkg_name_from_path(dest_dir),
+                PKGNAME = () -> pkg_name_from_path(target_dir),
                 GHUSER = () -> _getgitopt("github.user", "your Github username"),
                 USERNAME = () -> _getgitopt("user.name",
                                             "your name (as the package author)"),
@@ -123,73 +154,123 @@ end
 """
 $(SIGNATURES)
 
+Return the template directory for `name`. Symbols refer to built-in templates, while strings
+are considered paths. Directories are always verified to exist.
+"""
+function resolve_template_directory(name::Symbol)
+    dir = abspath(joinpath(@__DIR__, "..", "templates", String(name)))
+    @argcheck isdir(dir) "Could not find built-in template $(name)."
+    dir
+end
+
+function resolve_template_directory(dir::AbstractString)
+    @argcheck isdir(dir) "Could not find directory $(dir)."
+    dir
+end
+
+"""
+$(SIGNATURES)
+
+Read a template directory, and return as a vector of `relative_path => content` pairs,
+sorted on the relative path for consistency.
+"""
+function read_template_directory(template_dir)
+    template = Vector{Pair{String,String}}()
+    for (root, dirs, files) in walkdir(template_dir)
+        for file in files
+            absolute_path = joinpath(root, file)
+            relative_path = relpath(absolute_path, template_dir)
+            push!(template, relative_path => read(absolute_path, String))
+        end
+    end
+    sort!(template, by = first)
+end
+
+"""
+$(SIGNATURES)
+
+Wrap replacements in `{}`s for use in the templates.
+
+!!! NOTE
+    This function is the sole place where the template logic is encoded. If templates syntax
+    changes, nothing else needs to be rewritten.
+"""
+function delimited_replacements(replacements)
+    ["{$(string(key))}" => string(value) for (key, value) in pairs(replacements)]
+end
+
+"""
+$(SIGNATURES)
+
 Replace multiple pairs in `str`, using `replace` iteratively.
 
-`replacements` should be an associative collection that supports `pairs` (eg `Dict`,
-`NamedTuple`, …). They are wrapped in `{}`s for replacement in the templates.
+`delimited_replacements` should be an iterable, it is applied in the given order.
 """
-function replace_multiple(str, replacements)
-    delimited_replacements = Dict(["{$(string(key))}" => string(value)
-                                   for (key, value) in pairs(replacements)])
+function replace_multiple(str, delimited_replacements)
     foldl(replace, delimited_replacements; init = str)
 end
 
 """
 $(SIGNATURES)
 
-Copy from `src_dir` to `dest_dir` recursively, making the substitutions of
-
-1. file contents and
-
-2. filenames
-
-using `replacements`.
-
-Existing files are not overwritten when `skip_existing_files = true` (the default).
-
-Directory names are *not* replaced.
-
-Return a list of `source => dest` path pairs, with `source ≡ nothing` when `dest` was not
-overwritten.
+Apply the replacements in `template`, returning a vector of `relpath => content` pairs, in
+the same order.
 """
-function copy_and_substitute(src_dir, dest_dir, replacements;
-                             skip_existing_files::Bool = true)
-    results = Vector{Pair{Union{String,Nothing},String}}()
-    for (root, dirs, files) in walkdir(src_dir)
-        sub_dir = relpath(root, src_dir)
-        mkpath(normpath(dest_dir, sub_dir))
-        for file in files
-            srcfile = joinpath(root, file)
-            destfile = normpath(joinpath(dest_dir, sub_dir,
-                                         replace_multiple(file, replacements)))
-            if isfile(destfile) && skip_existing_files
-                push!(results, nothing => destfile)
-            else
-                push!(results, srcfile => destfile)
-                srcstring = read(srcfile, String)
-                deststring = replace_multiple(srcstring, replacements)
-                write(destfile, deststring)
-            end
-        end
-    end
-    results
+function apply_replacements(template, delimited_replacements)
+    _replace(x) = replace_multiple(x, delimited_replacements)
+    [_replace(relpath) => _replace(content) for (relpath, content) in template]
 end
 
 """
 $(SIGNATURES)
 
-Return the template directory for `name`. Symbols refer to built-in templates, while strings
-are considered paths. Directories are always verified to exist.
+Compare files in the applied template with the target directory.
+
+Three vectors of `relpath => content` pairs are returned in a `NamedTuple`:
+
+- `same_files`: files with identical content in the applied template.
+- `dirty_files`: files with different content, which are not committed in the repository.
+- `clean_files`: empty files or files which would change but are committed.
 """
-function resolve_template_dir(name::Symbol)
-    dir = abspath(joinpath(@__DIR__, "..", "templates", String(name)))
-    @argcheck isdir(dir) "Could not find built-in template $(name)."
-    dir
+function compare_with_target(target_dir, applied_template)
+    repository = LibGit2.GitRepo(target_dir)
+    same_files = Vector{Pair{String,String}}()
+    dirty_files = Vector{Pair{String,String}}()
+    clean_files = Vector{Pair{String,String}}()
+    for relpath_content in applied_template
+        relpath, content = relpath_content
+        abspath = joinpath(target_dir, relpath)
+        already_exists = ispath(abspath)
+        already_exists && (@argcheck isfile(abspath) "$(abspath) is not a file, aborting.")
+        if already_exists && read(abspath, String) == content
+            push!(same_files, relpath_content)
+        elseif already_exists && LibGit2.status(repository, relpath) ≠ 0
+            push!(dirty_files, relpath_content)
+        else
+            push!(clean_files, relpath_content)
+        end
+    end
+    # FIXME replace with compact (; ...) syntax once we only support VERSION ≥ 1.5
+    (same_files = same_files, dirty_files = dirty_files, clean_files = clean_files)
 end
 
-function resolve_template_dir(dir::AbstractString)
-    @argcheck isdir(dir) "Could not find directory $(dir)."
-    dir
+"""
+$(SIGNATURES)
+
+
+"""
+function msg_and_write(kind, header, target_dir, relpath_content_pairs)
+    isempty(relpath_content_pairs) && return nothing
+    msg(kind, header; header = true)
+    for (relpath, content) in relpath_content_pairs
+        msg(kind, "  $(relpath)")
+        if target_dir ≢ nothing
+            abspath = joinpath(target_dir, relpath)
+            mkpath(dirname(abspath))
+            write(abspath, content)
+        end
+    end
+    nothing
 end
 
 ####
@@ -199,69 +280,100 @@ end
 """
 $(SIGNATURES)
 
-Generate the skeleton for a Julia package in `dest_dir`.
+Generate the skeleton for a Julia package in `target_dir`. The directory is transformed with
+`expanduser`, replacing `~` in paths.
 
-The directory is transformed with `expanduser`, replacing `~` in paths.
+!!! NOTE
+    If a package already exists at `target_dir`, it is strongly recommended that the
+    repository is in a clean state (no untracked files or uncommited changes).
 
-# Arguments
+# Example
 
-`template` specifies the template to use. Symbols (eg `:default`, which is the default)
-refer to *built-in* templates delivered with this package. Strings are considered paths.
+```julia
+import PkgSkeleton
+PkgSkeleton.generate("/tmp/Foo")
+```
 
-`replacements`: a `NamedTuple` that can be used to manually specify the replacements:
+# Keyword arguments and defaults
+
+- `template = :default`: specifies the template to use. Symbols refer to *built-in*
+  templates delivered with this package. Strings are used as paths.
+
+- `user_replacements = (;)`: a `NamedTuple` that can be used to manually specify the
+  replacements (see below).
+
+- `docs_manifest = true` completes the `Manifest.toml` in the `docs` subdirectory. You
+   usually want this.
+
+- `overwrite_uncommited = false`: Existing files which are not committed in the repository
+  are not overwritten unless this is `true`, generation is aborted with an error. **It is
+  strongly advised that you just commit or delete exising files instead of using this
+  flag.**
+
+# Replacements
 
 $(REPLACEMENTS_DOCSTRING)
 
-Specifically, `PKGNAME` can be used to specify a package name, derived from `dest_dir` by
+Specifically, `PKGNAME` can be used to specify a package name, derived from `target_dir` by
 default: the package name is `"Foo"` for all of
 
-1. `"/tmp/Foo"`, 2. `"/tmp/Foo/"`, 3. `"/tmp/Foo.jl"`, 4. `"/tmp/Foo.jl/"`.
+1. `"/tmp/Foo"`,
+2. `"/tmp/Foo/"`,
+3. `"/tmp/Foo.jl"`,
+4. `"/tmp/Foo.jl/"`.
 
 Use a different name only when you know what you are doing.
-
-`skip_existing_dir = true` (the default) aborts package generation for existing directories.
-
-`skip_existing_files = true` (the default) prevents existing files from being overwritten.
-
-`git_init = true` (the default) ensures that an *empty* repository is generated in
-`dest_dir`. You still have to commit files yourself.
-
-`docs_manifest` completes the `Manifest.toml` in the `docs` subdirectory. You usually want
-this.
 """
-function generate(dest_dir; template = :default,
-                  replacements::NamedTuple = NamedTuple(),
-                  skip_existing_dir::Bool = true,
-                  skip_existing_files::Bool = true,
-                  git_init::Bool = true, docs_manifest::Bool = true)
-    dest_dir = expanduser(dest_dir)
-    # preliminary checks
-    @argcheck !isfile(dest_dir) "destination $(dest_dir) is a file."
-    if skip_existing_dir && isdir(dest_dir)
-        @warn "destination $(dest_dir) exists, skipping package generation.\nConsider `skip_existing_dir = false`."
-        return false
+function generate(target_dir; template = :default,
+                  user_replacements::NamedTuple = NamedTuple(),
+                  overwrite_uncommited::Bool = false,
+                  docs_manifest::Bool = true)
+    target_dir = expanduser(target_dir)
+    msg(:general, "getting template replacement values")
+    replacements = fill_replacements(user_replacements; target_dir = target_dir)
+
+    template_dir = resolve_template_directory(template)
+    msg(:general, "reading template $(template) from $(template_dir)")
+    template = read_template_directory(template_dir)
+    applied_template = apply_replacements(template, delimited_replacements(replacements))
+
+    if ispath(target_dir)
+        @argcheck isdir(target_dir) "destination $(target_dir) is not a directory."
+    end
+    if isdir(target_dir)
+        try
+            LibGit2.GitRepo(target_dir)
+        catch
+            error("target $(target_dir) exists, but is not a valid git repository")
+        end
+    else
+        msg(:general, "target $(target_dir) does not exist, creating with a git repository")
+        mkpath(target_dir)
+        LibGit2.init(target_dir)
     end
 
-    # copy and substitute
-    @info "getting template values"
-    replacements = fill_replacements(replacements; dest_dir = dest_dir)
-    @info "copy and substitute"
-    results = copy_and_substitute(resolve_template_dir(template), dest_dir, replacements;
-                                  skip_existing_files = skip_existing_files)
-    for (src, dest) in results
-        src ≡ nothing && println(stderr, "not overwriting $(dest)")
+    @unpack same_files, dirty_files, clean_files =
+        compare_with_target(target_dir, applied_template)
+
+    if overwrite_uncommited
+        msg_and_write(:dirty,
+                      "OVERWRITING the following uncommitted files as requested:",
+                      target_dir, dirty_files)
+    else
+        msg_and_write(:dirty, "uncommited changes in the following files, SKIPPING:",
+                      nothing, dirty_files)
     end
 
-    # git initialization
-    if git_init
-        @info "initializing git repository"
-        LibGit2.init(dest_dir)
-    end
+    msg_and_write(:clean,
+                  "(over)writing the following files (missing or committed in the repository):",
+                  target_dir, clean_files)
 
-    # docs manifest
+    msg_and_write(:same, "the following files as they would not change, SKIPPING:",
+                  nothing, same_files)
+
     if docs_manifest
-        @info "adding documenter (completing the Manifest.toml for docs)"
-        docs = joinpath(dest_dir, "docs")
+        msg(:general, "adding documenter (completing the Manifest.toml for docs)")
+        docs = joinpath(target_dir, "docs")
         cd(docs) do
             current_project = Base.active_project()
             try
@@ -275,8 +387,9 @@ function generate(dest_dir; template = :default,
     end
 
     # done
-    @info "successfully generated $(replacements.PKGNAME)" dest_dir
-    true
+    msg(:general, "successfully generated $(replacements.PKGNAME)")
+
+    nothing
 end
 
 end # module
