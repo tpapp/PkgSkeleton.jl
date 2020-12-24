@@ -1,3 +1,4 @@
+## travis-ci.com setup, keep or delete depending on whether you are using that service.
 ## Documentation: http://docs.travis-ci.com/user/languages/julia/
 language: julia
 dist: focal

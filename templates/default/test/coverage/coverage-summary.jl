@@ -2,7 +2,6 @@
 #### Coverage summary, printed as "(percentage) covered".
 ####
 #### Useful for CI environments that just want a summary (eg a Gitlab setup).
-####
 
 using Coverage
 cd(joinpath(@__DIR__, "..", "..")) do
