@@ -1,3 +1,5 @@
+# template from https://github.com/JuliaCI/Appveyor.jl
+
 environment:
   matrix:
   - julia_version: 1
