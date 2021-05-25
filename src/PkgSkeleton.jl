@@ -375,7 +375,7 @@ end
 $(SIGNATURES)
 
 Generate the skeleton for a Julia package in `target_dir`. The directory is transformed with
-`expanduser`, replacing `~` in paths.
+`expanduser`, replacing `~` in paths. Print a summary of what changed.
 
 !!! NOTE
     If a package already exists at `target_dir`, it is strongly recommended that the

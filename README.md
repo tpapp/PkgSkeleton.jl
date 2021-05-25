@@ -65,19 +65,19 @@ For the default template, you need to set the `git` configuration variables `use
 
 Templates replace the following in files *and filenames*:
 
-| string        | replacement                    |
-|---------------|--------------------------------|
-| `{PKGNAME}`   | name of the package            |
-| `{UUID}`      | a random UUID                  |
-| `{GHUSER}`    | `git config --get github.user` |
-| `{USERNAME}`  | `git config --get user.name`   |
-| `{USEREMAIL}` | `git config --get user.email`  |
-| `{YEAR}`      | the current year               |
+| string        | replacement                                                                              |
+|---------------|------------------------------------------------------------------------------------------|
+| `{PKGNAME}`   | name of the package                                                                      |
+| `{UUID}`      | look in existing `Project.toml`, in the local registry copies, fallback to a random UUID |
+| `{GHUSER}`    | `git config --get github.user`                                                           |
+| `{USERNAME}`  | `git config --get user.name`                                                             |
+| `{USEREMAIL}` | `git config --get user.email`                                                            |
+| `{YEAR}`      | the current year                                                                         |
 
 ## Design principles
 
 1. [Keep it simple](https://en.wikipedia.org/wiki/KISS_principle): do nothing more than substitute strings into templates, with a few safeguards. This keeps the code simple: currently [less than 300 LOC](src/PkgSkeleton.jl) without docstrings. For me, this covers 99% of the use cases; the rest I edit manually.
 
-2. Tread ligthly: don't modify uncommitted files (unless asked to), or files with the same content (to preserve timestamps).
+2. Tread ligthly: don't modify uncommitted files (unless asked to, but really don't do that), or files with the same content (to preserve timestamps).
 
 3. Assume that tooling for packages will keep changing, make it easy to update.
