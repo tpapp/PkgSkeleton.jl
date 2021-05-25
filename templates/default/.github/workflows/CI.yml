@@ -46,25 +46,28 @@ jobs:
       - uses: codecov/codecov-action@v1
         with:
           file: lcov.info
-  docs:
-    name: Documentation
-    runs-on: ubuntu-latest
-    steps:
-      - uses: actions/checkout@v2
-      - uses: julia-actions/setup-julia@v1
-        with:
-          version: '1'
-      - run: |
-          julia --project=docs -e '
-            using Pkg
-            Pkg.develop(PackageSpec(path=pwd()))
-            Pkg.instantiate()'
-      - run: |
-          julia --project=docs -e '
-            using Documenter: doctest
-            using {PKGNAME}
-            doctest({PKGNAME})'
-      - run: julia --project=docs docs/make.jl
-        env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-          DOCUMENTER_KEY: ${{ secrets.DOCUMENTER_KEY }}
+  ## NOTE: uncomment below to generate and deploy docs, also add the relevant deploy key as described
+  ## in https://juliadocs.github.io/Documenter.jl/dev/man/hosting/#Authentication:-SSH-Deploy-Keys
+  # docs:                        
+  #   name: Documentation
+  #   runs-on: ubuntu-latest
+  #   steps:
+  #     - uses: actions/checkout@v2
+  #     - uses: julia-actions/setup-julia@v1
+  #       with:
+  #         version: '1'
+  #     - run: |
+  #         julia --project=docs -e '
+  #           using Pkg
+  #           Pkg.develop(PackageSpec(path=pwd()))
+  #           Pkg.instantiate()'
+  #     - run: |
+  #         julia --project=docs -e '
+  #           using Documenter: doctest
+  #           using {PKGNAME}
+  #           DocMeta.setdocmeta!({PKGNAME}, :DocTestSetup, :(using {PKGNAME}); recursive=true)
+  #           doctest({PKGNAME})'
+  #     - run: julia --project=docs docs/make.jl
+  #       env:
+  #         GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+  #         DOCUMENTER_KEY: ${{ secrets.DOCUMENTER_KEY }}
