@@ -14,8 +14,9 @@ using ArgCheck: @argcheck
 import Dates
 using DocStringExtensions: SIGNATURES
 import LibGit2
-import UUIDs
+using UUIDs: uuid4, UUID
 import Pkg
+import TOML
 using UnPack: @unpack
 
 ####
@@ -102,6 +103,98 @@ end
 """
 $(SIGNATURES)
 
+Lookup UUIDs matching `pkg_name` in the local copy of registries in `DEPOT_PATH`.
+
+Return a vector of strings.
+"""
+function lookup_UUIDs_in_registries(pkg_name)
+    # Look up Registry.toml files in depots
+    uuids = UUID[]
+    for d in DEPOT_PATH
+        regs = joinpath(d, "registries")
+        if isdir(regs)
+            for r in readdir(regs)
+                toml_path = joinpath(regs, r, "Registry.toml")
+                if isfile(toml_path)
+                    toml = TOML.parsefile(toml_path)
+                    if haskey(toml, "packages")
+                        for (k, v) in toml["packages"]
+                            if v["name"] == pkg_name
+                                push!(uuids, UUID(k))
+                            end
+                        end
+                    end
+                end
+            end
+        end
+    end
+    uuids
+end
+
+"""
+$(SIGNATURES)
+
+Look up the UUID in the project file of `target_dir` and return it, or `nothing` if it is
+not found or there is no project file.
+
+When `pkg_name` is provided, an error is thrown if the project file has a different
+name.
+"""
+function lookup_UUID_in_project(target_dir, pkg_name = nothing)
+    toml_path = joinpath(target_dir, "Project.toml")
+    if !isfile(toml_path)
+        toml_path = joinpath(target_dir, "JuliaProject.toml")
+        isfile(toml_path) || return nothing
+    end
+    toml = TOML.parsefile(toml_path)
+    if pkg_name ≢ nothing && haskey(toml, "name")
+        name = toml["name"]
+        if name ≠ pkg_name
+            error("name = $(name) in project file does not match $(pkg_name)")
+        end
+    end
+    if haskey(toml, "uuid")
+        UUID(toml["uuid"])
+    else
+        nothing
+    end
+end
+
+"""
+$(SIGNATURES)
+
+Heuristic to find an existing UUID or generate a new one.
+
+*If* there is a target directory, try to find a project file there with an UUID.
+
+If this fails, check the registry, if matches are found, inform the user (printing the
+UUIDs) and abort.
+
+Otherwise, generate a random UUID.
+"""
+function existing_or_random_UUID(target_dir, pkg_name = nothing)
+    if isdir(target_dir)
+        uuid_project = lookup_UUID_in_project(target_dir, pkg_name)
+        if uuid_project ≢ nothing
+            msg(:general, "Found UUID from existing project file.")
+            return uuid_project
+        end
+        uuids_registry = lookup_UUIDs_in_registries(pkg_name ≡ nothing ?
+                                                    pkg_name_from_path(target_dir) : pkg_name)
+        if length(uuids_registry) ≥ 1
+            msg(:general, "Found the following UUIDs matching $(pkg_name) in the local registries:")
+            for uuid in uuids_registry
+                msg(:general, "  ", uuid)
+            end
+            error("Provide an UUID with Pkg.generate(target_dir, (UUID = Base.UUID(\"...\"), )).")
+        end
+    end
+    uuid4()
+end
+
+"""
+$(SIGNATURES)
+
 Populate a NamedTuple replacements, either from arguments or by querying global settings and
 state. When a value is available in `user_replacements`, it is used directly.
 
@@ -136,7 +229,8 @@ function fill_replacements(user_replacements; target_dir)
             f()
         end
     end
-    defaults = (UUID = () -> UUIDs.uuid4(),
+    defaults = (UUID = () -> existing_or_random_UUID(target_dir,
+                                                     get(defaults, :PKG_NAME, nothing)),
                 PKGNAME = () -> pkg_name_from_path(target_dir),
                 GHUSER = () -> _getgitopt("github.user", "your Github username"),
                 USERNAME = () -> _getgitopt("user.name",
@@ -356,15 +450,15 @@ function generate(target_dir; template = :default,
                       "OVERWRITING the following uncommitted files as requested:",
                       target_dir, dirty_files)
     else
-        msg_and_write(:dirty, "uncommitted changes in the following files, SKIPPING:",
+        msg_and_write(:dirty, "SKIPPING uncommitted changes in the following files:",
                       nothing, dirty_files)
     end
 
     msg_and_write(:clean,
-                  "(over)writing the following files (missing or committed in the repository):",
+                  "(OVER)WRITING the following files (missing or committed in the repository):",
                   target_dir, clean_files)
 
-    msg_and_write(:same, "the following files as they would not change, SKIPPING:",
+    msg_and_write(:same, "SKIPPING the following files as they would not change:",
                   nothing, same_files)
 
     # done
