@@ -390,7 +390,7 @@ PkgSkeleton.generate("/tmp/Foo")
 
 # Keyword arguments and defaults
 
-- `template = :default`: specifies the template to use. Symbols refer to *built-in*
+- `templates = [:default]`: specifies the templates to use. Symbols refer to *built-in*
   templates delivered with this package. Strings are used as paths.
 
 - `user_replacements = (;)`: a `NamedTuple` that can be used to manually specify the
@@ -415,17 +415,19 @@ default: the package name is `"Foo"` for all of
 
 Use a different name only when you know what you are doing.
 """
-function generate(target_dir; template = :default,
+function generate(target_dir; templates = [:default],
                   user_replacements::NamedTuple = NamedTuple(),
                   overwrite_uncommitted::Bool = false)
     target_dir = expanduser(target_dir)
     msg(:general, "getting template replacement values")
     replacements = fill_replacements(user_replacements; target_dir = target_dir)
 
-    template_dir = resolve_template_directory(template)
-    msg(:general, "reading template $(template) from $(template_dir)")
-    template = read_template_directory(template_dir)
-    applied_template = apply_replacements(template, delimited_replacements(replacements))
+    applied_templates = map(templates) do template_name
+        template_dir = resolve_template_directory(template_name)
+        msg(:general, "reading template $(template_name) from $(template_dir)")
+        template = read_template_directory(template_dir)
+        apply_replacements(template, delimited_replacements(replacements))
+    end
 
     if ispath(target_dir)
         @argcheck isdir(target_dir) "destination $(target_dir) is not a directory."
@@ -442,24 +444,29 @@ function generate(target_dir; template = :default,
         LibGit2.init(target_dir)
     end
 
-    @unpack same_files, dirty_files, clean_files =
-        compare_with_target(target_dir, applied_template)
+    for (template_name, applied_template) in zip(templates, applied_templates)
+        msg(:general, "applying template $(template_name)")
 
-    if overwrite_uncommitted
-        msg_and_write(:dirty,
-                      "OVERWRITING the following uncommitted files as requested:",
-                      target_dir, dirty_files)
-    else
-        msg_and_write(:dirty, "SKIPPING uncommitted changes in the following files:",
-                      nothing, dirty_files)
+        @unpack same_files, dirty_files, clean_files =
+            compare_with_target(target_dir, applied_template)
+
+        if overwrite_uncommitted
+            msg_and_write(:dirty,
+                          "OVERWRITING the following uncommitted files as requested:",
+                          target_dir, dirty_files)
+        else
+            msg_and_write(:dirty, "SKIPPING uncommitted changes in the following files:",
+                          nothing, dirty_files)
+        end
+
+        msg_and_write(:clean,
+                      "(OVER)WRITING the following files (missing or committed in the repository):",
+                      target_dir, clean_files)
+
+        msg_and_write(:same, "SKIPPING the following files as they would not change:",
+                      nothing, same_files)
+
     end
-
-    msg_and_write(:clean,
-                  "(OVER)WRITING the following files (missing or committed in the repository):",
-                  target_dir, clean_files)
-
-    msg_and_write(:same, "SKIPPING the following files as they would not change:",
-                  nothing, same_files)
 
     # done
     msg(:general, "successfully generated $(replacements.PKGNAME)")

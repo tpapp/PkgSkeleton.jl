@@ -158,7 +158,7 @@ end
     @testset "no overwrite" begin
         mktempdir() do tempdir
             run(`$(joinpath(TEST_TEMPLATES, "create_git_test_repo.sh")) $(tempdir)`)
-            generate(tempdir; user_replacements = (YEAR = year, ), template = template)
+            generate(tempdir; user_replacements = (YEAR = year, ), templates = [template])
             for file in ["staged", "untracked", "in_repo_unstaged"]
                 @test chomp(read(joinpath(tempdir, file), String)) == file
             end
@@ -169,7 +169,7 @@ end
     @testset "forced overwrite" begin
         mktempdir() do tempdir
             run(`$(joinpath(TEST_TEMPLATES, "create_git_test_repo.sh")) $(tempdir)`)
-            generate(tempdir; user_replacements = (YEAR = year, ), template = template,
+            generate(tempdir; user_replacements = (YEAR = year, ), templates = [template],
                      overwrite_uncommitted = true)
             for file in ["staged", "untracked", "in_repo_unstaged", "comitted"]
                 @test chomp(read(joinpath(tempdir, file), String)) == year
