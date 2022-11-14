@@ -1,7 +1,7 @@
 name = "PkgSkeleton"
 uuid = "d254efa0-af53-535e-b7f1-03c1c9fbcbe7"
 authors = ["Tamas K. Papp <tkpapp@gmail.com>"]
-version = "0.5.0"
+version = "1.0.0"
 
 [deps]
 ArgCheck = "dce04be8-c92d-5529-be00-80e4d2c0e197"
@@ -17,7 +17,7 @@ UnPack = "3a884ed6-31ef-47d7-9d2a-63182c4928ed"
 ArgCheck = "1, 2"
 DocStringExtensions = "0.8"
 UnPack = "1"
-julia = "1"
+julia = "1.6"
 TOML = "1"
 
 [extras]
