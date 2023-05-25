@@ -1,22 +1,48 @@
-image: julia:1.5                # image comes from Docker hub
-
-before_script:
-  - julia --project=@. -e "import Pkg; Pkg.build()"
-
-default:
+.script:
   script:
-    - julia --project=@. -e "import Pkg; Pkg.test(; coverage = true)"
-    - julia --project=test/coverage -e 'import Pkg; Pkg.instantiate()'
-    - julia --project=test/coverage test/coverage/coverage-summary.jl
-
-pages:
-  stage: deploy
-  script:
-    - julia --project=docs -e 'using Pkg; Pkg.instantiate(); Pkg.develop(PackageSpec(path=pwd()))'
-    - julia --project=docs --color=yes docs/make.jl
-    - mv docs/build public # move to the directory picked up by Gitlab pages
-  artifacts:
-    paths:
-      - public
-  only:
-  - master
+    - |
+      julia --project=@. -e '
+        using Pkg
+        Pkg.build()
+        Pkg.test(coverage=true)'
+.coverage:
+  coverage: /Test coverage (\d+\.\d+%)/
+  after_script:
+    - |
+      julia -e '
+        using Pkg
+        Pkg.add("Coverage")
+        using Coverage
+        c, t = get_summary(process_folder())
+        using Printf
+        @printf "Test coverage %.2f%%\n" 100c / t'
+Julia 1:
+  image: julia:1
+  extends:
+    - .script
+    - .coverage
+Julia 1.6:
+  image: julia:1.6
+  extends:
+    - .script
+    - .coverage
+# pages:
+#   image: julia:1
+#   stage: deploy
+#   script:
+#     - |
+#       julia --project=docs -e '
+#         using Pkg
+#         Pkg.develop(PackageSpec(path=pwd()))
+#         Pkg.instantiate()
+#         using Documenter: doctest
+#         using {PKGNAME}
+#         doctest({PKGNAME})
+#         include("docs/make.jl")'
+#     - mkdir -p public
+#     - mv docs/build public/dev
+#   artifacts:
+#     paths:
+#       - public
+#   only:
+#     - master
