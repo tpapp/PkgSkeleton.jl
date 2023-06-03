@@ -184,7 +184,7 @@ end
     # NOTE this should be the last test as it unsets options on CI
     if CI                       # only for CI
         setgitopt("user.name", nothing)
-        @test_throws GitOptionNotFound fill_replacements(NamedTuple();
+        @test_throws GitOptionNotFound fill_replacements!(Dict{String,String}();
                                                          target_dir = "/tmp/FOO.jl")
     end
 end
