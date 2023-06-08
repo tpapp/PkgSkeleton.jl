@@ -17,3 +17,5 @@
 [![Documentation](https://img.shields.io/badge/docs-stable-blue.svg)](https://{GHUSER}.github.io/{PKGNAME}.jl/stable)
 [![Documentation](https://img.shields.io/badge/docs-master-blue.svg)](https://{GHUSER}.github.io/{PKGNAME}.jl/dev)
 -->
+<!-- Aqua badge, see test/runtests.jl -->
+<!-- [![Aqua QA](https://raw.githubusercontent.com/JuliaTesting/Aqua.jl/master/badge.svg)](https://github.com/JuliaTesting/Aqua.jl) -->
