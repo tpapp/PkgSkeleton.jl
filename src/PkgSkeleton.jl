@@ -195,17 +195,18 @@ end
 """
 $(SIGNATURES)
 
-Populate a NamedTuple replacements, either from arguments or by querying global settings and
-state. When a value is available in `user_replacements`, it is used directly.
+Populate missing replacements in a `Dict{String,String}`, either from arguments or by
+querying global settings and state. When a value is available in `user_replacements`, it is
+used directly.
 
-The following replacement values are used:
+The following replacement values are populated by default:
 
 $(REPLACEMENTS_DOCSTRING)
 
 `target_dir` is used as a path, and does not have to exist as a directory for this function
 to work.
 """
-function fill_replacements(user_replacements; target_dir)
+function fill_replacements!(user_replacements::Dict{String,String}; target_dir)
     c = LibGit2.GitConfig()     # global configuration
     function _getgitopt(opt, used_for)
         try
@@ -218,27 +219,23 @@ function fill_replacements(user_replacements; target_dir)
             end
         end
     end
-    _provided_values = propertynames(user_replacements)
-    function _ensure_value(key, f)
-        if key ∈ _provided_values
-            # VERSION ≥ 1.2 could use hasproperty, but we support earlier versions too
-            getproperty(user_replacements, key)
-        else
-            # we are lazy here so that the user can user an override when obtaining the
-            # value from the environment would error
-            f()
+    function _ensure(key, f)
+        if !haskey(user_replacements, key)
+            # we are lazy here so that the user can use an override when obtaining
+            # the value from the environment would error
+            user_replacements[key] = f()
         end
     end
-    defaults = (UUID = () -> existing_or_random_UUID(target_dir,
-                                                     get(defaults, :PKG_NAME, nothing)),
-                PKGNAME = () -> pkg_name_from_path(target_dir),
-                GHUSER = () -> _getgitopt("github.user", "your Github username"),
-                USERNAME = () -> _getgitopt("user.name",
-                                            "your name (as the package author)"),
-                USEREMAIL = () -> _getgitopt("user.email",
-                                             "your e-mail (as the package author)"),
-                YEAR = () -> Dates.year(Dates.now()))
-    NamedTuple{keys(defaults)}(map(_ensure_value, keys(defaults), values(defaults)))
+    _ensure("PKGNAME", () -> pkg_name_from_path(target_dir))
+    _ensure("UUID",
+            () -> string(existing_or_random_UUID(target_dir, get(user_replacements, "PKG_NAME", nothing))))
+    _ensure("GHUSER", () -> _getgitopt("github.user", "your Github username")),
+    _ensure("USERNAME" ,
+            () -> _getgitopt("user.name", "your name (as the package author)"))
+    _ensure("USEREMAIL",
+            () -> _getgitopt("user.email", "your e-mail (as the package author)"))
+    _ensure("YEAR", () -> string(Dates.year(Dates.now())))
+    user_replacements
 end
 
 ####
@@ -252,7 +249,7 @@ Return the template directory for `name`. Symbols refer to built-in templates, w
 are considered paths. Directories are always verified to exist.
 """
 function resolve_template_directory(name::Symbol)
-    dir = abspath(joinpath(@__DIR__, "..", "templates", String(name)))
+    dir = abspath(joinpath(@__DIR__, "..", "templates", string(name)))
     @argcheck isdir(dir) "Could not find built-in template $(name)."
     dir
 end
@@ -367,6 +364,20 @@ function msg_and_write(kind, header, target_dir, relpath_content_pairs)
     nothing
 end
 
+"""
+$(SIGNATURES)
+
+Convert argument to `Dict{String,String}`, always ensuring that it is an independent copy.
+"""
+function convert_replacements(user_replacements::Dict{String,String})
+    copy(user_replacements)
+end
+
+function convert_replacements(user_replacements::Union{NamedTuple,AbstractDict})
+    Dict((string(k) => string(v))::Pair{String,String}
+         for (k, v) in pairs(user_replacements))
+end
+
 ####
 #### exposed API
 ####
@@ -393,8 +404,9 @@ PkgSkeleton.generate("/tmp/Foo")
 - `templates = [:default]`: specifies the templates to use. Symbols refer to *built-in*
   templates delivered with this package. Strings are used as paths.
 
-- `user_replacements = (;)`: a `NamedTuple` that can be used to manually specify the
-  replacements (see below).
+- `user_replacements = Dict{String,String}()`: a `Dict{String,String}`, or anything that
+  that supports `pairs` with keys and values that can be converted to strings. It can be
+  used to manually specify the replacements (see below).
 
 - `overwrite_uncommitted = false`: Existing files which are not committed in the repository
   are not overwritten unless this is `true`, generation is aborted with an error. **It is
@@ -402,6 +414,8 @@ PkgSkeleton.generate("/tmp/Foo")
   flag.**
 
 # Replacements
+
+The following replacements are added to `user_replacements` when missing:
 
 $(REPLACEMENTS_DOCSTRING)
 
@@ -414,13 +428,18 @@ default: the package name is `"Foo"` for all of
 4. `"/tmp/Foo.jl/"`.
 
 Use a different name only when you know what you are doing.
+
+Users can add custom strings to be replaced. `Dict("CUSTOM" => "42")` will replace
+`{CUSTOM}` with `42` in the template. Use strings if possible, but conversion to strings
+will be attempted with `string`.
 """
 function generate(target_dir; templates = [:default],
-                  user_replacements::NamedTuple = NamedTuple(),
+                  user_replacements = Dict{String,String}(),
                   overwrite_uncommitted::Bool = false)
     target_dir = expanduser(target_dir)
     msg(:general, "getting template replacement values")
-    replacements = fill_replacements(user_replacements; target_dir = target_dir)
+    replacements = fill_replacements!(convert_replacements(user_replacements);
+                                      target_dir = target_dir)
 
     applied_templates = map(templates) do template_name
         template_dir = resolve_template_directory(template_name)
@@ -469,7 +488,7 @@ function generate(target_dir; templates = [:default],
     end
 
     # done
-    msg(:general, "successfully generated $(replacements.PKGNAME)")
+    msg(:general, "successfully generated $(replacements["PKGNAME"])")
 
     nothing
 end

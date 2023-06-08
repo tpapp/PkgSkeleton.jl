@@ -1,9 +1,9 @@
 using PkgSkeleton, Test, Dates, UUIDs
 
 # import internals for testing
-using PkgSkeleton: fill_replacements, resolve_template_directory, pkg_name_from_path,
-    delimited_replacements, replace_multiple, read_template_directory, GitOptionNotFound,
-    generate
+using PkgSkeleton: convert_replacements, fill_replacements!, resolve_template_directory,
+    pkg_name_from_path, delimited_replacements, replace_multiple, read_template_directory,
+    GitOptionNotFound, generate
 
 ####
 #### some templates for testing
@@ -71,20 +71,22 @@ end
 @testset "replacement values" begin
     # also see tests at the end for the error
     @testset "using environment" begin
-        d = fill_replacements(NamedTuple(); target_dir = "/tmp/FOO.jl")
-        @test d.PKGNAME == "FOO"
-        @test d.UUID isa UUID
-        @test d.GHUSER == GHUSER
-        @test d.USERNAME == USERNAME
-        @test d.USEREMAIL == USEREMAIL
-        @test d.YEAR == year(now())
+        d = fill_replacements!(convert_replacements(Dict("CUSTOM" => "42")); target_dir = "/tmp/FOO.jl")
+        @test d["PKGNAME"] == "FOO"
+        @test UUID(d["UUID"]) isa UUID
+        @test d["GHUSER"] == GHUSER
+        @test d["USERNAME"] == USERNAME
+        @test d["USEREMAIL"] == USEREMAIL
+        @test d["YEAR"] == string(year(now()))
+        @test d["CUSTOM"] == "42" # this is left alone
+        @test length(d) == 7      # no extras introduced
     end
 
     @testset "using explicit replacements" begin
         r = (PKGNAME = "bar", UUID = "1234", GHUSER = "someone", USERNAME = "Some O. N.",
              USEREMAIL = "foo@bar.baz", YEAR = 1643)
-        r′ = fill_replacements(r; target_dir = "irrelevant")
-        @test sort(collect(pairs(r)), by = first) == sort(collect(pairs(r′)), by = first)
+        r′ = fill_replacements!(convert_replacements(r); target_dir = "irrelevant")
+        @test sort(collect(string(k) => string(v) for (k, v) in pairs(r)), by = first) == sort(collect(pairs(r′)), by = first)
     end
 end
 
@@ -182,7 +184,7 @@ end
     # NOTE this should be the last test as it unsets options on CI
     if CI                       # only for CI
         setgitopt("user.name", nothing)
-        @test_throws GitOptionNotFound fill_replacements(NamedTuple();
+        @test_throws GitOptionNotFound fill_replacements!(Dict{String,String}();
                                                          target_dir = "/tmp/FOO.jl")
     end
 end
