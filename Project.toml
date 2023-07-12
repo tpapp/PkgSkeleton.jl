@@ -1,7 +1,7 @@
 name = "PkgSkeleton"
 uuid = "d254efa0-af53-535e-b7f1-03c1c9fbcbe7"
 authors = ["Tamas K. Papp <tkpapp@gmail.com>"]
-version = "1.1.0"
+version = "1.2.0"
 
 [deps]
 ArgCheck = "dce04be8-c92d-5529-be00-80e4d2c0e197"
