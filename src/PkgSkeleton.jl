@@ -382,6 +382,9 @@ end
 #### exposed API
 ####
 
+"The default templates. Not exported, for internal use."
+const DEFAULT_TEMPLATES = [:default, :github]
+
 """
 $(SIGNATURES)
 
@@ -401,8 +404,8 @@ PkgSkeleton.generate("/tmp/Foo")
 
 # Keyword arguments and defaults
 
-- `templates = [:default]`: specifies the templates to use. Symbols refer to *built-in*
-  templates delivered with this package. Strings are used as paths.
+- `templates = $(DEFAULT_TEMPLATES)`: specifies the templates to use. Symbols refer to
+  *built-in* templates delivered with this package. Strings are used as paths.
 
 - `user_replacements = Dict{String,String}()`: a `Dict{String,String}`, or anything that
   that supports `pairs` with keys and values that can be converted to strings. It can be
@@ -433,7 +436,7 @@ Users can add custom strings to be replaced. `Dict("CUSTOM" => "42")` will repla
 `{CUSTOM}` with `42` in the template. Use strings if possible, but conversion to strings
 will be attempted with `string`.
 """
-function generate(target_dir; templates = [:default],
+function generate(target_dir; templates = DEFAULT_TEMPLATES,
                   user_replacements = Dict{String,String}(),
                   overwrite_uncommitted::Bool = false)
     target_dir = expanduser(target_dir)
