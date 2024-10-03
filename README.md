@@ -51,7 +51,10 @@ Best practices and recommended setups change with time. The recommended workflow
     ```julia
     PkgSkeleton.generate("/path/to/pkg")
     ```
-    and see the output for what was modified.
+    and see the output for what was modified. If you just want to update eg your Github workflows, restrict with
+    ```julia
+    PkgSkeleton.generate("/path/to/pkg"; templates = [:github])
+    ```
 
 4. Use your favorite git interface for reviewing the change. Pick and commit what you like, discard the rest of the changes.
 

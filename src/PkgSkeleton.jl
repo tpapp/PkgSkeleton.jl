@@ -395,11 +395,20 @@ Generate the skeleton for a Julia package in `target_dir`. The directory is tran
     If a package already exists at `target_dir`, it is strongly recommended that the
     repository is in a clean state (no untracked files or uncommitted changes).
 
-# Example
+# Examples
+
+## Generate the template for a new package
 
 ```julia
 import PkgSkeleton
 PkgSkeleton.generate("/tmp/Foo")
+```
+
+## Update the Github-specific part (workflows, etc)
+
+```julia
+import PkgSkeleton
+PkgSkeleton.generate("/path/to/pkg"; templates = [:github])
 ```
 
 # Keyword arguments and defaults
