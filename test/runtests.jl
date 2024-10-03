@@ -144,6 +144,8 @@ end
             run(`julia --startup-file=no --project=docs -e 'using Pkg; Pkg.instantiate(); Pkg.develop(PackageSpec(path=pwd()))'`)
             @test isfile(joinpath(dest_dir, "docs", "Manifest.toml"))
             @info "test documentation (generation)"
+            run(`sed -i '/pages/a\
+                remotes=nothing,' docs/make.jl`) # disable remotes so that tests run
             run(`julia --startup-file=no --project=docs --color=yes docs/make.jl`)
             @test isfile(joinpath(dest_dir, "docs", "build", "index.html"))
             @info "test coverage (only instantiation)"
