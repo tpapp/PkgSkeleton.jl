@@ -17,7 +17,6 @@ import LibGit2
 using UUIDs: uuid4, UUID
 import Pkg
 import TOML
-using UnPack: @unpack
 
 ####
 #### utilities
@@ -478,7 +477,7 @@ function generate(target_dir; templates = DEFAULT_TEMPLATES,
     for (template_name, applied_template) in zip(templates, applied_templates)
         msg(:general, "applying template $(template_name)")
 
-        @unpack same_files, dirty_files, clean_files =
+        (; same_files, dirty_files, clean_files) =
             compare_with_target(target_dir, applied_template)
 
         if overwrite_uncommitted
