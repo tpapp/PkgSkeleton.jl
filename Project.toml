@@ -15,10 +15,10 @@ UnPack = "3a884ed6-31ef-47d7-9d2a-63182c4928ed"
 
 [compat]
 ArgCheck = "1, 2"
-DocStringExtensions = "0.8"
+DocStringExtensions = "0.8, 0.9"
+TOML = "1"
 UnPack = "1"
 julia = "1.6"
-TOML = "1"
 
 [extras]
 Pkg = "44cfe95a-1eb2-52ea-b672-e2afdf69b78f"
