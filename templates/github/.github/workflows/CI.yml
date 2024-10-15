@@ -48,3 +48,6 @@ jobs:
       - uses: codecov/codecov-action@v4
         with:
           file: lcov.info
+          # NOTE: you need to add the token to Github secrets, see
+          # https://docs.codecov.com/docs/adding-the-codecov-token
+          token: ${{ secrets.CODECOV_TOKEN }}

@@ -10,8 +10,7 @@
 [![build](https://github.com/{GHUSER}/{PKGNAME}.jl/workflows/CI/badge.svg)](https://github.com/{GHUSER}/{PKGNAME}.jl/actions?query=workflow%3ACI)
 <!-- travis-ci.com badge, uncomment or delete as needed, depending on whether you are using that service. -->
 <!-- [![Build Status](https://travis-ci.com/{GHUSER}/{PKGNAME}.jl.svg?branch=master)](https://travis-ci.com/{GHUSER}/{PKGNAME}.jl) -->
-<!-- Coverage badge on codecov.io, which is used by default. -->
-[![codecov.io](http://codecov.io/github/{GHUSER}/{PKGNAME}.jl/coverage.svg?branch=master)](http://codecov.io/github/{GHUSER}/{PKGNAME}.jl?branch=master)
+<!-- NOTE: Codecov.io badge now depends on the token, copy from their site after setting up -->
 <!-- Documentation -- uncomment or delete as needed -->
 <!--
 [![Documentation](https://img.shields.io/badge/docs-stable-blue.svg)](https://{GHUSER}.github.io/{PKGNAME}.jl/stable)
