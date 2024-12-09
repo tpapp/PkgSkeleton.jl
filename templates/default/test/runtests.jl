@@ -12,7 +12,5 @@ using Test
 ## NOTE add Aqua to the test environment, then uncomment
 # @testset "QA with Aqua" begin
 #     import Aqua
-#     Aqua.test_all({PKGNAME}; ambiguities = false)
-#     # testing separately, cf https://github.com/JuliaTesting/Aqua.jl/issues/77
-#     Aqua.test_ambiguities({PKGNAME})
+#     Aqua.test_all({PKGNAME})
 # end
