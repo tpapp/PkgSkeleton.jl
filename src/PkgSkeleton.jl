@@ -413,7 +413,8 @@ PkgSkeleton.generate("/path/to/pkg"; templates = [:github])
 # Keyword arguments and defaults
 
 - `templates = $(DEFAULT_TEMPLATES)`: specifies the templates to use. Symbols refer to
-  *built-in* templates delivered with this package. Strings are used as paths.
+  *built-in* templates delivered with this package. Strings are used as paths. Can be a
+   vector or a single element.
 
 - `user_replacements = Dict{String,String}()`: a `Dict{String,String}`, or anything that
   that supports `pairs` with keys and values that can be converted to strings. It can be
@@ -452,6 +453,9 @@ function generate(target_dir; templates = DEFAULT_TEMPLATES,
     replacements = fill_replacements!(convert_replacements(user_replacements);
                                       target_dir = target_dir)
 
+    if !(templates isa AbstractVector)
+        templates = [templates]
+    end
     applied_templates = map(templates) do template_name
         template_dir = resolve_template_directory(template_name)
         msg(:general, "reading template $(template_name) from $(template_dir)")
