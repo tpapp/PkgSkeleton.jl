@@ -382,7 +382,7 @@ end
 ####
 
 "The default templates. Not exported, for internal use."
-const DEFAULT_TEMPLATES = [:default, :github]
+const DEFAULT_TEMPLATES = [:core, :docs, :github]
 
 """
 $(SIGNATURES)
