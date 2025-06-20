@@ -91,10 +91,10 @@ end
 end
 
 @testset "template directories" begin
-    default_template = abspath(joinpath(@__DIR__, "..", "templates", "default"))
-    @test resolve_template_directory(:default) == default_template
+    core_template = abspath(joinpath(@__DIR__, "..", "templates", "core"))
+    @test resolve_template_directory(:core) == core_template
     @test_throws ArgumentError resolve_template_directory(:nonexistent_builtin)
-    @test resolve_template_directory(default_template) == default_template
+    @test resolve_template_directory(core_template) == core_template
     @test_throws ArgumentError resolve_template_directory(tempname()) # nonexistent
 end
 
