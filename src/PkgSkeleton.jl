@@ -13,7 +13,7 @@ module PkgSkeleton
 using ArgCheck: @argcheck
 import Dates
 using DocStringExtensions: SIGNATURES
-import LibGit2
+using Git_jll: git
 using UUIDs: uuid4, UUID
 import Pkg
 import TOML
@@ -206,16 +206,12 @@ $(REPLACEMENTS_DOCSTRING)
 to work.
 """
 function fill_replacements!(user_replacements::Dict{String,String}; target_dir)
-    c = LibGit2.GitConfig()     # global configuration
     function _getgitopt(opt, used_for)
-        try
-            LibGit2.get(AbstractString, c, opt)
-        catch e
-            if e isa LibGit2.GitError # assume it is not found
-                throw(GitOptionNotFound(opt, used_for))
-            else
-                rethrow(e)
-            end
+        o = readchomp(`$(git) config --global $(opt)`)
+        if isempty(o)
+            throw(GitOptionNotFound(opt, used_for))
+        else
+            o
         end
     end
     function _ensure(key, f)
@@ -314,6 +310,17 @@ end
 """
 $(SIGNATURES)
 
+Return true if a file is “dirty” (has uncommited changes).
+"""
+function _is_dirty(target_dir, path)
+    status = readchomp(`$(git) -C $(target_dir) status --porcelain $(path)`)
+    isempty(status) && return false
+    !startswith(status, "   ")  # unmodified
+end
+
+"""
+$(SIGNATURES)
+
 Compare files in the applied template with the target directory.
 
 Three vectors of `relpath => content` pairs are returned in a `NamedTuple`:
@@ -323,7 +330,6 @@ Three vectors of `relpath => content` pairs are returned in a `NamedTuple`:
 - `clean_files`: empty files or files which would change but are committed.
 """
 function compare_with_target(target_dir, applied_template)
-    repository = LibGit2.GitRepo(target_dir)
     same_files = Vector{Pair{String,String}}()
     dirty_files = Vector{Pair{String,String}}()
     clean_files = Vector{Pair{String,String}}()
@@ -334,7 +340,7 @@ function compare_with_target(target_dir, applied_template)
         already_exists && (@argcheck isfile(abspath) "$(abspath) is not a file, aborting.")
         if already_exists && read(abspath, String) == content
             push!(same_files, relpath_content)
-        elseif already_exists && LibGit2.status(repository, relpath) ≠ 0
+        elseif already_exists && _is_dirty(target_dir, abspath)
             push!(dirty_files, relpath_content)
         else
             push!(clean_files, relpath_content)
@@ -468,14 +474,14 @@ function generate(target_dir; templates = DEFAULT_TEMPLATES,
     end
     if isdir(target_dir)
         try
-            LibGit2.GitRepo(target_dir)
+            success(`$(git) -C $(target_dir) rev-parse`)
         catch
             error("target $(target_dir) exists, but is not a valid git repository")
         end
     else
         msg(:general, "target $(target_dir) does not exist, creating with a git repository")
         mkpath(target_dir)
-        LibGit2.init(target_dir)
+        run(`$(git) init $(target_dir)`)
     end
 
     for (template_name, applied_template) in zip(templates, applied_templates)
