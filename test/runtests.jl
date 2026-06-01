@@ -186,15 +186,6 @@ end
     end
 end
 
-@testset "unset options" begin
-    # NOTE this should be the last test as it unsets options on CI
-    if CI                       # only for CI
-        setgitopt("user.name", nothing)
-        @test_throws GitOptionNotFound fill_replacements!(Dict{String,String}();
-                                                         target_dir = "/tmp/FOO.jl")
-    end
-end
-
 @testset "github actions consistency check" begin
     root_ref = normpath(@__DIR__, "..")
     discrepancies = Any[]
@@ -216,4 +207,13 @@ end
         end
     end
     @test isempty(discrepancies)
+end
+
+@testset "unset options" begin
+    # NOTE this should be the last test as it unsets options on CI
+    if CI                       # only for CI
+        setgitopt("user.name", nothing)
+        @test_throws GitOptionNotFound fill_replacements!(Dict{String,String}();
+                                                         target_dir = "/tmp/FOO.jl")
+    end
 end
