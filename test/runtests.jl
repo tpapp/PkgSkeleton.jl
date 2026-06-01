@@ -26,6 +26,8 @@ end
 
 const CI = parse(Bool, lowercase(get(ENV, "CI", "false")))
 
+@info "CI status" CI
+
 function getgitopt(opt)
     try
         chomp(read(`git config --get $(opt)`, String))
