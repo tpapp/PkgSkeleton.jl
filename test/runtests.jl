@@ -190,3 +190,26 @@ end
                                                          target_dir = "/tmp/FOO.jl")
     end
 end
+
+@testset "github actions consistency check" begin
+    root_ref = normpath(@__DIR__, "..")
+    discrepancies = Any[]
+    mktempdir() do tmp
+        pkgdir = joinpath(tmp, "PkgSkeleton.jl")
+        generate(pkgdir; templates = :github)
+        for (path, dirs, files) in walkdir(joinpath(pkgdir, ".github"))
+            for file in files
+                path_gen = joinpath(path, file)
+                relpath_gen = relpath(path_gen, pkgdir)
+                path_ref = normpath(root_ref, relpath_gen)
+                contents_gen = readchomp(path_gen)
+                contents_ref = readchomp(path_ref)
+                if contents_gen ≠ contents_ref
+                    @info "actions discrepancy" relpath_gen
+                    push!(discrepancies, relpath_gen)
+                end
+            end
+        end
+    end
+    @test isempty(discrepancies)
+end
