@@ -15,7 +15,7 @@ UUIDs = "cf7118a7-6976-5b1a-9a39-7adc72f591a4"
 [compat]
 ArgCheck = "1, 2"
 DocStringExtensions = "0.8, 0.9"
-Git_jll = "2.54.0"
+Git_jll = "2.26.0"
 TOML = "1"
 julia = "1.8"
 
