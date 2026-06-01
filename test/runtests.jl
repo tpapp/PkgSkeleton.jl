@@ -53,6 +53,8 @@ else
     GHUSER = getgitopt("github.user")
 end
 
+run(`git config list --global`)
+
 ####
 #### test components
 ####
