@@ -215,7 +215,7 @@ function fill_replacements!(user_replacements::Dict{String,String}; target_dir)
                 o
             end
         catch e
-            if e isa ProcessFailException
+            if e isa ProcessFailedException
                 throw(GitOptionNotFound(opt, used_for))
             else
                 rethrow(e)
