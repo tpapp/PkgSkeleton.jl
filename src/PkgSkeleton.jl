@@ -209,17 +209,17 @@ function fill_replacements!(user_replacements::Dict{String,String}; target_dir)
     function _getgitopt(opt, used_for)
         try
             o = readchomp(`$(git) config --global $(opt)`)
+            if isempty(o)
+                throw(GitOptionNotFound(opt, used_for))
+            else
+                o
+            end
         catch e
             if e isa ProcessFailException
                 throw(GitOptionNotFound(opt, used_for))
             else
                 rethrow(e)
             end
-        end
-        if isempty(o)
-            throw(GitOptionNotFound(opt, used_for))
-        else
-            o
         end
     end
     function _ensure(key, f)
