@@ -1,6 +1,6 @@
 name = "PkgSkeleton"
 uuid = "d254efa0-af53-535e-b7f1-03c1c9fbcbe7"
-version = "1.5.0"
+version = "1.5.1"
 authors = ["Tamas K. Papp <tkpapp@gmail.com>"]
 
 [deps]
