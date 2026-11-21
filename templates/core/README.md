@@ -18,3 +18,5 @@
 -->
 <!-- Aqua badge, see test/runtests.jl -->
 <!-- [![Aqua QA](https://raw.githubusercontent.com/JuliaTesting/Aqua.jl/master/badge.svg)](https://github.com/JuliaTesting/Aqua.jl) -->
+<!-- PkgEval badge: whether the package's tests pass on Julia master, once it is registered. Uncomment or delete as needed. -->
+<!-- [![PkgEval](https://perf.julialang.org/badges/pkgeval/{PKGNAME}.svg)](https://perf.julialang.org/pkgeval/{PKGNAME}) -->
